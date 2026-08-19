@@ -5,3 +5,4 @@ __pycache__/
 !assets/*.pdf
 .DS_Store
 Thumbs.db
+.streamlit/secrets.toml

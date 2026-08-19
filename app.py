@@ -6,6 +6,7 @@ Alle erzeugten Daten sind fiktiv und ausschließlich für Testzwecke gedacht.
 
 from __future__ import annotations
 
+import hmac
 import io
 import random
 import re
@@ -37,6 +38,46 @@ st.set_page_config(
     page_icon="🧾",
     layout="wide",
 )
+
+
+def _check_password() -> bool:
+    """Zeigt ein einfaches Passwort-Gate, bevor die App gerendert wird.
+
+    Das Passwort wird über Streamlit-Secrets konfiguriert (lokal in
+    .streamlit/secrets.toml, in der Cloud über die App-Settings) und NIE
+    im Code oder Git-Repo hinterlegt.
+    """
+    if st.session_state.get("authenticated"):
+        return True
+
+    if "app_password" not in st.secrets:
+        st.warning(
+            "⚠️ Kein Passwortschutz konfiguriert (Secret 'app_password' "
+            "fehlt) – die App ist aktuell ungeschützt erreichbar. Für den "
+            "produktiven Einsatz in den App-Settings auf share.streamlit.io "
+            "unter 'Secrets' ein `app_password` hinterlegen."
+        )
+        return True
+
+    st.title("🔒 RRV Testdokumente Generator")
+    st.caption("Bitte Passwort eingeben, um fortzufahren.")
+
+    with st.form("login_form"):
+        pw = st.text_input("Passwort", type="password")
+        submitted = st.form_submit_button("Anmelden")
+
+    if submitted:
+        if hmac.compare_digest(pw, st.secrets["app_password"]):
+            st.session_state.authenticated = True
+            st.rerun()
+        else:
+            st.error("Falsches Passwort.")
+
+    return False
+
+
+if not _check_password():
+    st.stop()
 
 DOC_RECHNUNG = "Rechnung"
 DOC_BUCHUNG = "Buchungsbestätigung"
