@@ -19,6 +19,7 @@ from data.providers import PROVIDERS, zufaelliger_anbieter
 from generators.aerztliche_bescheinigung import erzeuge_aerztliche_bescheinigung
 from generators.buchungsbestaetigung import erzeuge_buchungsbestaetigung
 from generators.deckblatt import erzeuge_deckblatt
+from generators.online_schadenmeldung import erzeuge_online_schadenmeldung
 from generators.rechnung import erzeuge_rechnung
 from generators.storno import erzeuge_storno
 from utils.fake_data import (
@@ -41,6 +42,7 @@ DOC_RECHNUNG = "Rechnung"
 DOC_BUCHUNG = "Buchungsbestätigung"
 DOC_STORNO = "Storno-Rechnung / Stornobestätigung"
 DOC_AERZTLICH = "Ärztliche Bescheinigung"
+DOC_SCHADENMELDUNG = "Online-Schadenmeldung"
 PROVIDER_DOC_TYPES = [DOC_RECHNUNG, DOC_BUCHUNG, DOC_STORNO]
 PROVIDER_NAMEN = [p.name for p in PROVIDERS]
 
@@ -105,6 +107,7 @@ def _init_state():
     st.session_state["chk_buchung"] = True
     st.session_state["chk_storno"] = True
     st.session_state["chk_aerztlich"] = True
+    st.session_state["chk_schadenmeldung"] = True
 
     st.session_state.initialized = True
 
@@ -207,11 +210,16 @@ for w in warnungen:
 st.divider()
 st.subheader("2. Dokumenttypen")
 
-dt_col1, dt_col2, dt_col3, dt_col4 = st.columns(4)
+dt_col1, dt_col2, dt_col3, dt_col4, dt_col5 = st.columns(5)
 dt_col1.checkbox(DOC_RECHNUNG, key="chk_rechnung")
 dt_col2.checkbox(DOC_BUCHUNG, key="chk_buchung")
 dt_col3.checkbox(DOC_STORNO, key="chk_storno")
 dt_col4.checkbox(DOC_AERZTLICH, key="chk_aerztlich")
+dt_col5.checkbox(DOC_SCHADENMELDUNG, key="chk_schadenmeldung")
+st.caption(
+    f"'{DOC_SCHADENMELDUNG}' orientiert sich am 4-stufigen ADAC-Online-Formular "
+    "(Schaden → Dokumente & Rechnungen → Persönliche Daten → Prüfen & Senden)."
+)
 
 st.divider()
 st.subheader("3. Reiseanbieter")
@@ -275,6 +283,8 @@ if generieren_clicked:
         ausgewaehlte_typen.append(DOC_STORNO)
     if st.session_state["chk_aerztlich"]:
         ausgewaehlte_typen.append(DOC_AERZTLICH)
+    if st.session_state["chk_schadenmeldung"]:
+        ausgewaehlte_typen.append(DOC_SCHADENMELDUNG)
 
     if not ausgewaehlte_typen:
         st.error("Bitte mindestens einen Dokumenttyp auswählen.")
@@ -306,6 +316,11 @@ if generieren_clicked:
         if DOC_AERZTLICH in ausgewaehlte_typen:
             pdf = erzeuge_aerztliche_bescheinigung(fall)
             fname = f"{mgl_nr_slug}_AerztlicheBescheinigung_{name_slug}_{heute_str}.pdf"
+            ergebnisse[fname] = pdf
+
+        if DOC_SCHADENMELDUNG in ausgewaehlte_typen:
+            pdf = erzeuge_online_schadenmeldung(fall, list(ergebnisse.keys()), rng)
+            fname = f"{mgl_nr_slug}_OnlineSchadenmeldung_{name_slug}_{heute_str}.pdf"
             ergebnisse[fname] = pdf
 
         deckblatt_pdf = erzeuge_deckblatt(fall, ausgewaehlter_anbieter, list(ergebnisse.keys()))

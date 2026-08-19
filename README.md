@@ -15,11 +15,15 @@ python -m venv .venv
 ## Verwendung
 
 1. Falldaten in der Eingabemaske ausfüllen (Krankheit, Name, Adresse, Daten, IBAN …).
-2. Gewünschte Dokumenttypen auswählen (Rechnung, Buchungsbestätigung, Storno, Ärztliche Bescheinigung).
-3. Optional: "Neuen Zufallsfall generieren" würfelt alle Zusatzfelder (Anbieter,
-   Rechnungsnummern, Beträge, Arztname …) neu, ohne die oben gesetzten
-   Kernfelder zu verändern.
-4. "Dokumente generieren" klicken und die PDFs einzeln oder als ZIP herunterladen.
+2. Gewünschte Dokumenttypen auswählen (Rechnung, Buchungsbestätigung, Storno,
+   Ärztliche Bescheinigung, Online-Schadenmeldung).
+3. Reiseanbieter auswählen (gilt für Rechnung, Buchungsbestätigung & Storno).
+4. Optional: "Neuen Zufallsfall generieren" würfelt alle Zusatzfelder
+   (Rechnungsnummern, Beträge, Arztname …) neu, ohne die oben gesetzten
+   Kernfelder oder den gewählten Anbieter zu verändern.
+5. "Dokumente generieren" klicken und die PDFs einzeln oder als ZIP
+   herunterladen. Ein Deckblatt mit allen Falldaten wird automatisch
+   mitgeneriert.
 
 ## Projektstruktur
 
@@ -32,6 +36,8 @@ generators/rechnung.py              Rechnung
 generators/buchungsbestaetigung.py  Buchungsbestätigung
 generators/storno.py                Storno-Rechnung
 generators/aerztliche_bescheinigung.py  Ärztliche Bescheinigung (AcroForm-Fill)
+generators/online_schadenmeldung.py Online-Schadenmeldung (angelehnt an das ADAC-Online-Formular)
+generators/deckblatt.py             Deckblatt mit Fallübersicht
 utils/fake_data.py                  Falldaten-Modell, IBAN-Generator, Datumslogik
 utils/pdf_helpers.py                Gemeinsame PDF-Bausteine (Wasserzeichen, Layouts)
 ```
