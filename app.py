@@ -236,7 +236,13 @@ with col1:
         )
 
 with col2:
-    st.date_input("Geburtsdatum", key="in_geburtsdatum", format="DD.MM.YYYY")
+    st.date_input(
+        "Geburtsdatum",
+        key="in_geburtsdatum",
+        format="DD.MM.YYYY",
+        min_value=date(1943, 1, 1),
+        max_value=date.today(),
+    )
     st.date_input("Stornodatum", key="in_stornodatum", format="DD.MM.YYYY")
     st.date_input("Ereignisdatum (Diagnose/Versicherungsfall)", key="in_ereignisdatum", format="DD.MM.YYYY")
     reise_col1, reise_col2 = st.columns(2)
