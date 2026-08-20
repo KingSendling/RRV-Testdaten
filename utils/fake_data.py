@@ -52,6 +52,29 @@ FACHRICHTUNGEN = [
     "Kardiologie",
 ]
 
+BANKNAMEN = [
+    "Sparkasse Musterstadt",
+    "Volksbank Beispiel eG",
+    "Deutsche Testbank AG",
+    "Raiffeisenbank Fiktiv eG",
+    "Testhausen Kreissparkasse",
+]
+
+# Ordnet eine Krankheit einer der 9 Stornierungsgrund-Kategorien des
+# Schadenmeldeformulars zu (Exportwerte "1"-"9" von Feld 17).
+STORNIERUNGSGRUND_KATEGORIEN: dict[str, str] = {
+    "Grippaler Infekt": "Unerwartete, schwere Erkrankung",
+    "Magen-Darm-Infekt": "Unerwartete, schwere Erkrankung",
+    "Bänderriss (Sprunggelenk)": "Unfall",
+    "Schwangerschaftskomplikation": "Schwangerschaft",
+    "Akute Blinddarmentzündung": "Unerwartete, schwere Erkrankung",
+    "Bandscheibenvorfall": "Unerwartete, schwere Erkrankung",
+    "Knochenbruch (Unterarm)": "Unfall",
+    "Herz-Kreislauf-Beschwerden": "Unerwartete, schwere Erkrankung",
+    "Migräneattacke": "Unerwartete, schwere Erkrankung",
+    "Covid-19-Infektion": "Unerwartete, schwere Erkrankung",
+}
+
 KLINIKNAMEN = [
     "Klinikum St. Elisabeth",
     "Städtisches Krankenhaus Nordstadt",
@@ -145,6 +168,14 @@ class FallDaten:
     praxis_ort: str = ""
     praxisstempel_text: str = ""
     bescheinigung_datum: date | None = None
+
+    telefon: str = ""
+    email: str = ""
+    reisebuero: str = ""
+    bic: str = ""
+    bank_name: str = ""
+    erstattungsbetrag: float = 0.0
+    stornierungsgrund_kategorie: str = ""
 
     def ist_schwangerschaftsfall(self) -> bool:
         stichworte = ["schwanger", "schwangerschaft"]
@@ -272,6 +303,17 @@ def wuerfle_zusatzfelder(fall: FallDaten, rng: random.Random, fake: Faker) -> Fa
         f"{fake.postcode()} {neu.praxis_ort}"
     )
     neu.bescheinigung_datum = fall.ereignisdatum + timedelta(days=rng.randint(0, 3))
+
+    neu.telefon = fake.phone_number()
+    neu.email = fake.email()
+    neu.reisebuero = f"{fake.company()} Reisebüro"
+    neu.bic = fake.swift(length=8)
+    neu.bank_name = rng.choice(BANKNAMEN)
+    _, erstattung = berechne_stornokosten(neu.reisepreis, fall.reise_von, fall.stornodatum)
+    neu.erstattungsbetrag = erstattung
+    neu.stornierungsgrund_kategorie = STORNIERUNGSGRUND_KATEGORIEN.get(
+        fall.krankheit, "Unerwartete, schwere Erkrankung"
+    )
 
     return neu
 
