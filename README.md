@@ -25,6 +25,25 @@ python -m venv .venv
    herunterladen. Ein Deckblatt mit allen Falldaten wird automatisch
    mitgeneriert.
 
+## Testfall wiederholen
+
+Beim Generieren wird zusätzlich eine JSON-Datei mit allen Falldaten zum
+Download angeboten ("Fall als JSON exportieren"). Über "📂 Bestehenden
+Testfall wiederholen" oben in der App lässt sich diese Datei später wieder
+hochladen: Alle Zufallsdaten (Name, IBAN, Diagnosetext, Beträge, Anbieter …)
+bleiben dabei exakt identisch, nur ein neues Ereignisdatum wird eingegeben –
+alle anderen Datumsfelder (Storno, Reisezeitraum, Buchung, AU-Zeitraum …)
+verschieben sich automatisch um denselben Abstand mit, damit der Testfall
+zeitlich schlüssig bleibt. Das Geburtsdatum ändert sich nicht.
+
+## Datumslogik
+
+Das Buchungsdatum liegt immer vor oder am selben Tag wie das Stornodatum
+(sonst würde der Camunda-Prozess den Testfall aussteuern) – das wird sowohl
+bei der Zufallsgenerierung sichergestellt als auch unmittelbar vor dem
+Erzeugen der Dokumente noch einmal automatisch korrigiert, falls das
+Stornodatum manuell davor verschoben wurde.
+
 ## Projektstruktur
 
 ```

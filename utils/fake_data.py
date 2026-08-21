@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import random
 import string
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field, fields, replace
 from datetime import date, timedelta
 
 from faker import Faker
@@ -250,7 +250,11 @@ def wuerfle_zusatzfelder(fall: FallDaten, rng: random.Random, fake: Faker) -> Fa
     neu.rechnungsnummer = f"RG-{rng.randint(100000, 999999)}"
     neu.rechnungsdatum = neu.stornodatum + timedelta(days=rng.randint(0, 2))
     neu.buchungsnummer = f"BK-{rng.randint(100000, 999999)}"
-    neu.buchungsdatum = neu.reise_von - timedelta(days=rng.randint(60, 180))
+    # Gebucht wird immer VOR dem Reisebeginn und VOR (oder am selben Tag wie)
+    # dem Stornodatum - sonst würde der Camunda-Prozess den Testfall wegen
+    # unplausibler Reihenfolge (Storno vor Buchung) aussteuern.
+    fruehestes_bezugsdatum = min(neu.stornodatum, neu.reise_von)
+    neu.buchungsdatum = fruehestes_bezugsdatum - timedelta(days=rng.randint(14, 150))
 
     grundpreis = rng.randint(2, 6) * 100 + rng.choice([0, 49, 90, 99])
     personen = rng.choice([1, 1, 2, 2, 3])
@@ -318,10 +322,29 @@ def wuerfle_zusatzfelder(fall: FallDaten, rng: random.Random, fake: Faker) -> Fa
     return neu
 
 
+def erzwinge_buchung_vor_storno(fall: FallDaten, rng: random.Random) -> FallDaten:
+    """Stellt sicher, dass Buchungsdatum <= Stornodatum gilt - diese Regel ist
+    hart, da der Camunda-Prozess Testfälle mit Storno vor Buchung immer
+    aussteuert. Wird als Sicherheitsnetz aufgerufen, falls das Stornodatum
+    nachträglich (ohne Reroll) manuell vor das gewürfelte Buchungsdatum
+    verschoben wurde."""
+    if fall.buchungsdatum is not None and fall.buchungsdatum <= fall.stornodatum:
+        return fall
+    neu = replace(fall)
+    neu.buchungsdatum = fall.stornodatum - timedelta(days=rng.randint(14, 150))
+    return neu
+
+
 def pruefe_datumslogik(fall: FallDaten) -> list[str]:
     """Gibt eine Liste von Warnhinweisen (nicht blockierend) zurück."""
     warnungen: list[str] = []
 
+    if fall.buchungsdatum is not None and fall.buchungsdatum > fall.stornodatum:
+        warnungen.append(
+            "Buchungsdatum liegt nach dem Stornodatum – der Prozess würde "
+            "diesen Testfall aussteuern. Wird beim Generieren automatisch "
+            "korrigiert."
+        )
     if fall.reise_bis <= fall.reise_von:
         warnungen.append(
             "Reiseende liegt nicht nach dem Reisebeginn – bitte prüfen."
@@ -349,6 +372,79 @@ def pruefe_datumslogik(fall: FallDaten) -> list[str]:
         warnungen.append("Geburtsdatum ergibt ein unplausibles Alter.")
 
     return warnungen
+
+
+def fall_zu_dict(fall: FallDaten, anbieter_name: str = "") -> dict:
+    """Serialisiert einen Testfall vollständig nach JSON-kompatiblem dict,
+    damit er als Datei gespeichert und später (z.B. zur Wiederholung eines
+    Tests mit neuem Ereignisdatum) wieder geladen werden kann."""
+    daten = {}
+    for k, v in vars(fall).items():
+        if isinstance(v, date):
+            daten[k] = v.isoformat()
+        else:
+            daten[k] = v
+    daten["_anbieter_name"] = anbieter_name
+    daten["_format_version"] = 1
+    return daten
+
+
+_DATUM_FELDER = [
+    "geburtsdatum",
+    "stornodatum",
+    "ereignisdatum",
+    "reise_von",
+    "reise_bis",
+    "rechnungsdatum",
+    "buchungsdatum",
+    "erster_arztbesuch_datum",
+    "au_von",
+    "au_bis",
+    "klinik_von",
+    "klinik_bis",
+    "bescheinigung_datum",
+]
+
+# Wird beim Verschieben NICHT mitverschoben - das Geburtsdatum einer Person
+# ändert sich nicht dadurch, dass ein Testfall an einem anderen Tag
+# wiederholt wird.
+_NICHT_VERSCHIEBBAR = {"geburtsdatum"}
+
+
+def fall_aus_dict(daten: dict) -> tuple[FallDaten, str]:
+    """Rekonstruiert einen Testfall aus fall_zu_dict(). Gibt (FallDaten,
+    anbieter_name) zurück."""
+    anbieter_name = daten.get("_anbieter_name", "")
+    feldnamen = {f.name for f in fields(FallDaten)}
+    kwargs = {}
+    for k, v in daten.items():
+        if k not in feldnamen:
+            continue
+        if k in _DATUM_FELDER and v is not None:
+            kwargs[k] = date.fromisoformat(v)
+        else:
+            kwargs[k] = v
+    return FallDaten(**kwargs), anbieter_name
+
+
+def verschiebe_datumsfelder(fall: FallDaten, neues_ereignisdatum: date) -> FallDaten:
+    """Verschiebt alle Datumsfelder eines Testfalls (außer Geburtsdatum) um
+    dieselbe Anzahl Tage, sodass `ereignisdatum` zu `neues_ereignisdatum`
+    wird. So lässt sich ein bereits erzeugter Testfall 1:1 wiederholen -
+    alle Zufallsdaten (Name, IBAN, Diagnosetext, Beträge, Anbieter ...)
+    bleiben identisch, nur die zeitliche Lage des gesamten Falls verschiebt
+    sich einheitlich."""
+    delta = neues_ereignisdatum - fall.ereignisdatum
+    if delta == timedelta(0):
+        return fall
+    neu = replace(fall)
+    for feldname in _DATUM_FELDER:
+        if feldname in _NICHT_VERSCHIEBBAR:
+            continue
+        wert = getattr(fall, feldname)
+        if wert is not None:
+            setattr(neu, feldname, wert + delta)
+    return neu
 
 
 def berechne_stornokosten(reisepreis: float, reise_von: date, stornodatum: date) -> tuple[float, float]:

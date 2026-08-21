@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hmac
 import io
+import json
 import random
 import re
 import zipfile
@@ -27,10 +28,14 @@ from generators.storno import erzeuge_storno
 from utils.fake_data import (
     FallDaten,
     KRANKHEITEN_VORSCHLAEGE,
+    erzwinge_buchung_vor_storno,
+    fall_aus_dict,
+    fall_zu_dict,
     generate_fake_iban,
     get_faker,
     is_valid_iban_checksum,
     pruefe_datumslogik,
+    verschiebe_datumsfelder,
     wuerfle_zusatzfelder,
 )
 
@@ -130,6 +135,8 @@ def _init_state():
 
     st.session_state.fall = fall
     st.session_state.generated = {}
+    st.session_state.generated_fall_json = None
+    st.session_state.generated_fall_json_fname = None
 
     st.session_state["in_krankheit_choice"] = fall.krankheit
     st.session_state["in_krankheit_freitext"] = ""
@@ -211,6 +218,70 @@ st.caption(
     "Interne App zur Erzeugung synthetischer Testdokumente für den Camunda-"
     "Prozess der Reiserücktrittsversicherung. Alle Daten sind frei erfunden."
 )
+
+with st.expander("📂 Bestehenden Testfall wiederholen (optional)"):
+    st.caption(
+        "Lädt eine zuvor unter '5. Download' exportierte Testfall-JSON-Datei "
+        "erneut. Alle Zufallsdaten (Name, IBAN, Diagnosetext, Beträge, "
+        "Anbieter …) bleiben dabei exakt identisch – nur das Ereignisdatum "
+        "wird auf den neuen Wert gesetzt, und alle anderen Datumsfelder "
+        "(Storno, Reisezeitraum, Buchung, AU-Zeitraum …) verschieben sich "
+        "um denselben Abstand mit, damit der Testfall zeitlich schlüssig "
+        "bleibt. Das Geburtsdatum ändert sich nicht."
+    )
+    hochgeladene_datei = st.file_uploader(
+        "Testfall-JSON hochladen", type="json", key="upload_testfall"
+    )
+    if hochgeladene_datei is not None:
+        try:
+            geladene_daten = json.loads(hochgeladene_datei.getvalue().decode("utf-8"))
+            geladener_fall, geladener_anbieter = fall_aus_dict(geladene_daten)
+        except Exception as exc:
+            st.error(f"Konnte Datei nicht lesen: {exc}")
+            geladener_fall = None
+            geladener_anbieter = ""
+
+        if geladener_fall is not None:
+            st.write(
+                f"Geladen: **{geladener_fall.vorname} {geladener_fall.name}** "
+                f"({geladener_fall.mgl_nr}) · bisheriges Ereignisdatum: "
+                f"{geladener_fall.ereignisdatum.strftime('%d.%m.%Y')}"
+            )
+            neues_ereignisdatum = st.date_input(
+                "Neues Ereignisdatum",
+                value=date.today(),
+                format="DD.MM.YYYY",
+                key="upload_neues_ereignisdatum",
+            )
+            if st.button("Testfall laden & Datum verschieben"):
+                verschoben = verschiebe_datumsfelder(geladener_fall, neues_ereignisdatum)
+                st.session_state.fall = verschoben
+                gewaehlte_krankheit = verschoben.krankheit
+                if gewaehlte_krankheit in KRANKHEITEN_VORSCHLAEGE:
+                    st.session_state["in_krankheit_choice"] = gewaehlte_krankheit
+                    st.session_state["in_krankheit_freitext"] = ""
+                else:
+                    st.session_state["in_krankheit_choice"] = FREITEXT_SENTINEL
+                    st.session_state["in_krankheit_freitext"] = gewaehlte_krankheit
+                st.session_state["in_mgl_nr"] = verschoben.mgl_nr
+                st.session_state["in_name"] = verschoben.name
+                st.session_state["in_vorname"] = verschoben.vorname
+                st.session_state["in_strasse"] = verschoben.strasse
+                st.session_state["in_plz_ort"] = verschoben.plz_ort
+                st.session_state["in_geburtsdatum"] = verschoben.geburtsdatum
+                st.session_state["in_stornodatum"] = verschoben.stornodatum
+                st.session_state["in_ereignisdatum"] = verschoben.ereignisdatum
+                st.session_state["in_reise_von"] = verschoben.reise_von
+                st.session_state["in_reise_bis"] = verschoben.reise_bis
+                st.session_state["in_iban"] = verschoben.iban
+                if geladener_anbieter in PROVIDER_NAMEN:
+                    st.session_state["in_anbieter"] = geladener_anbieter
+                st.session_state.generated = {}
+                st.success(
+                    "Testfall geladen, Datum verschoben. Werte unten prüfen "
+                    "und ggf. anpassen, dann Dokumente generieren."
+                )
+                st.rerun()
 
 st.subheader("1. Falldaten")
 
@@ -346,6 +417,7 @@ if generieren_clicked:
         st.error("Bitte mindestens einen Dokumenttyp auswählen.")
     else:
         fall = _aktueller_fall_mit_core_ueberschrieben()
+        fall = erzwinge_buchung_vor_storno(fall, random.Random())
         st.session_state.fall = fall
 
         rng = random.Random()
@@ -389,6 +461,12 @@ if generieren_clicked:
         ergebnisse = {deckblatt_fname: deckblatt_pdf, **ergebnisse}
 
         st.session_state.generated = ergebnisse
+        st.session_state.generated_fall_json = json.dumps(
+            fall_zu_dict(fall, ausgewaehlter_anbieter.name), ensure_ascii=False, indent=2
+        )
+        st.session_state.generated_fall_json_fname = (
+            f"{mgl_nr_slug}_Testfall_{name_slug}_{heute_str}.json"
+        )
 
         restliche_warnungen = pruefe_datumslogik(fall)
         for w in restliche_warnungen:
@@ -404,6 +482,11 @@ if st.session_state.generated:
     with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
         for fname, data in st.session_state.generated.items():
             zf.writestr(fname, data)
+        if st.session_state.generated_fall_json:
+            zf.writestr(
+                st.session_state.generated_fall_json_fname,
+                st.session_state.generated_fall_json,
+            )
 
     st.download_button(
         "⬇️ Alle Dokumente als ZIP herunterladen",
@@ -412,6 +495,18 @@ if st.session_state.generated:
         mime="application/zip",
         type="primary",
     )
+
+    if st.session_state.generated_fall_json:
+        st.download_button(
+            "⬇️ Fall als JSON exportieren (für spätere Wiederholung)",
+            data=st.session_state.generated_fall_json,
+            file_name=st.session_state.generated_fall_json_fname,
+            mime="application/json",
+            help=(
+                "Damit lässt sich dieser Testfall über 'Bestehenden Testfall "
+                "wiederholen' oben mit neuem Ereignisdatum erneut erzeugen."
+            ),
+        )
 
     for fname, data in st.session_state.generated.items():
         st.download_button(
