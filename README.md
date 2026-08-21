@@ -39,7 +39,8 @@ zeitlich schlüssig bleibt. Das Geburtsdatum ändert sich nicht.
 ## Datumslogik
 
 Das Buchungsdatum liegt immer vor oder am selben Tag wie das Stornodatum
-(sonst würde der Camunda-Prozess den Testfall aussteuern) – das wird sowohl
+UND vor dem Reisebeginn (sonst würde der Camunda-Prozess den Testfall
+aussteuern) – das wird sowohl
 bei der Zufallsgenerierung sichergestellt als auch unmittelbar vor dem
 Erzeugen der Dokumente noch einmal automatisch korrigiert, falls das
 Stornodatum manuell davor verschoben wurde.

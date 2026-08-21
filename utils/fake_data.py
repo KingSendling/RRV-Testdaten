@@ -322,16 +322,18 @@ def wuerfle_zusatzfelder(fall: FallDaten, rng: random.Random, fake: Faker) -> Fa
     return neu
 
 
-def erzwinge_buchung_vor_storno(fall: FallDaten, rng: random.Random) -> FallDaten:
-    """Stellt sicher, dass Buchungsdatum <= Stornodatum gilt - diese Regel ist
-    hart, da der Camunda-Prozess Testfälle mit Storno vor Buchung immer
-    aussteuert. Wird als Sicherheitsnetz aufgerufen, falls das Stornodatum
-    nachträglich (ohne Reroll) manuell vor das gewürfelte Buchungsdatum
-    verschoben wurde."""
-    if fall.buchungsdatum is not None and fall.buchungsdatum <= fall.stornodatum:
+def erzwinge_buchung_vor_storno_und_reise(fall: FallDaten, rng: random.Random) -> FallDaten:
+    """Stellt sicher, dass Buchungsdatum <= Stornodatum UND Buchungsdatum <=
+    Reisebeginn gilt - beide Regeln sind hart, da der Camunda-Prozess
+    Testfälle mit Storno oder Reisebeginn vor der Buchung immer aussteuert.
+    Wird als Sicherheitsnetz aufgerufen, falls Stornodatum oder
+    Reisezeitraum nachträglich (ohne Reroll) manuell vor das gewürfelte
+    Buchungsdatum verschoben wurden."""
+    fruehestes_bezugsdatum = min(fall.stornodatum, fall.reise_von)
+    if fall.buchungsdatum is not None and fall.buchungsdatum <= fruehestes_bezugsdatum:
         return fall
     neu = replace(fall)
-    neu.buchungsdatum = fall.stornodatum - timedelta(days=rng.randint(14, 150))
+    neu.buchungsdatum = fruehestes_bezugsdatum - timedelta(days=rng.randint(14, 150))
     return neu
 
 
@@ -342,6 +344,12 @@ def pruefe_datumslogik(fall: FallDaten) -> list[str]:
     if fall.buchungsdatum is not None and fall.buchungsdatum > fall.stornodatum:
         warnungen.append(
             "Buchungsdatum liegt nach dem Stornodatum – der Prozess würde "
+            "diesen Testfall aussteuern. Wird beim Generieren automatisch "
+            "korrigiert."
+        )
+    if fall.buchungsdatum is not None and fall.buchungsdatum > fall.reise_von:
+        warnungen.append(
+            "Buchungsdatum liegt nach dem Reisebeginn – der Prozess würde "
             "diesen Testfall aussteuern. Wird beim Generieren automatisch "
             "korrigiert."
         )

@@ -28,7 +28,7 @@ from generators.storno import erzeuge_storno
 from utils.fake_data import (
     FallDaten,
     KRANKHEITEN_VORSCHLAEGE,
-    erzwinge_buchung_vor_storno,
+    erzwinge_buchung_vor_storno_und_reise,
     fall_aus_dict,
     fall_zu_dict,
     generate_fake_iban,
@@ -417,7 +417,7 @@ if generieren_clicked:
         st.error("Bitte mindestens einen Dokumenttyp auswählen.")
     else:
         fall = _aktueller_fall_mit_core_ueberschrieben()
-        fall = erzwinge_buchung_vor_storno(fall, random.Random())
+        fall = erzwinge_buchung_vor_storno_und_reise(fall, random.Random())
         st.session_state.fall = fall
 
         rng = random.Random()
