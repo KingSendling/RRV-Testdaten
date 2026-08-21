@@ -18,6 +18,7 @@ from datetime import date, timedelta
 import streamlit as st
 
 from data.providers import PROVIDERS, zufaelliger_anbieter
+from data.testpersonen import TESTPERSONEN
 from generators.aerztliche_bescheinigung import erzeuge_aerztliche_bescheinigung
 from generators.buchungsbestaetigung import erzeuge_buchungsbestaetigung
 from generators.deckblatt import erzeuge_deckblatt
@@ -282,6 +283,32 @@ with st.expander("📂 Bestehenden Testfall wiederholen (optional)"):
                     "und ggf. anpassen, dann Dokumente generieren."
                 )
                 st.rerun()
+
+with st.expander("👤 Testperson aus Liste vorausfüllen (optional)"):
+    st.caption(
+        "Füllt Mgl.-Nr., Name, Vorname, Geburtsdatum und Adresse mit einer "
+        "vordefinierten Testperson aus dem internen Testdatensatz vor. "
+        "Krankheit, Termine und IBAN bleiben unverändert."
+    )
+    testperson_col, testperson_btn_col = st.columns([3, 1])
+    testperson_anzeige = testperson_col.selectbox(
+        "Testperson",
+        [p.anzeige for p in TESTPERSONEN],
+        key="in_testperson_auswahl",
+        label_visibility="collapsed",
+    )
+    if testperson_btn_col.button("Übernehmen", use_container_width=True):
+        gewaehlte_person = next(
+            p for p in TESTPERSONEN if p.anzeige == testperson_anzeige
+        )
+        st.session_state["in_mgl_nr"] = gewaehlte_person.mgl_nr
+        st.session_state["in_name"] = gewaehlte_person.nachname
+        st.session_state["in_vorname"] = gewaehlte_person.vorname
+        st.session_state["in_geburtsdatum"] = gewaehlte_person.geburtsdatum
+        st.session_state["in_strasse"] = gewaehlte_person.strasse
+        st.session_state["in_plz_ort"] = gewaehlte_person.plz_ort
+        st.success(f"Daten von {gewaehlte_person.anzeige} übernommen.")
+        st.rerun()
 
 st.subheader("1. Falldaten")
 

@@ -25,6 +25,14 @@ python -m venv .venv
    herunterladen. Ein Deckblatt mit allen Falldaten wird automatisch
    mitgeneriert.
 
+## Testperson vorausfüllen
+
+Über "👤 Testperson aus Liste vorausfüllen" oben in der App lässt sich Mgl.-Nr.,
+Name, Vorname, Geburtsdatum und Adresse mit einer von 116 vordefinierten
+Testpersonen aus dem internen Testdatensatz (`data/testpersonen.py`, erzeugt
+aus `TEST_DATA_INT3.xlsx`, Reiter "Extra-Daten") vorausfüllen. Krankheit,
+Termine und IBAN bleiben dabei unverändert.
+
 ## Testfall wiederholen
 
 Beim Generieren wird zusätzlich eine JSON-Datei mit allen Falldaten zum
@@ -52,6 +60,7 @@ app.py                              Streamlit-Einstiegspunkt
 assets/                             Original-ADAC-Formularvorlage
 data/providers.py                   Fiktive Reiseanbieter (Namen, Farben, Layout-Varianten)
 data/field_mapping.py               AcroForm-Feldnamen der Ärztlichen Bescheinigung & Schadenmeldung
+data/testpersonen.py                116 vordefinierte Testpersonen (Mgl.-Nr., Name, Geburtsdatum, Adresse)
 generators/rechnung.py              Rechnung
 generators/buchungsbestaetigung.py  Buchungsbestätigung
 generators/storno.py                Storno-Rechnung
