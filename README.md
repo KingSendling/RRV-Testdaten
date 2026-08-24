@@ -4,6 +4,16 @@ Interne Streamlit-App zur Erzeugung synthetischer Testdokumente für den
 Camunda-Prozess der Reiserücktrittsversicherung (RRV). Alle erzeugten Daten
 sind frei erfunden und ausschließlich für Testzwecke gedacht.
 
+## Design
+
+Helles, ruhiges Erscheinungsbild mit ADAC-Gelb (`#FFCC00`) als einziger
+Akzentfarbe für primäre Buttons, Checkbox-Häkchen und Eingabefokus. Schrift
+ist die Systemschrift (`-apple-system`/SF Pro auf Mac/iPhone), mit "Inter"
+als Web-Font-Fallback auf anderen Geräten, damit es überall nach Apple-Design
+aussieht statt nur auf Apple-Geräten. Konfiguriert über
+[.streamlit/config.toml](.streamlit/config.toml) (Grundfarben) und
+zusätzliches CSS in `app.py` (Schrift, Rundungen, Schatten).
+
 ## Setup
 
 ```bash

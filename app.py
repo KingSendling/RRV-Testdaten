@@ -48,6 +48,133 @@ st.set_page_config(
     layout="wide",
 )
 
+ADAC_GELB = "#FFCC00"
+ADAC_GELB_DUNKEL = "#E6B800"
+INK = "#1D1D1F"
+INK_MUTED = "#6E6E73"
+SURFACE = "#F5F5F7"
+LINE = "#E4E4E7"
+
+
+def _inject_custom_css() -> None:
+    """Apple-artiges Erscheinungsbild: Systemschrift (SF Pro auf Apple-
+    Geräten, sonst Inter als naher Ersatz), ruhige Grautöne, dezente
+    Schatten statt harter Rahmen, ADAC-Gelb als einzige Akzentfarbe."""
+    st.markdown(
+        f"""
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        html, body, [class*="st-"], [data-testid="stAppViewContainer"] {{
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+                "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: {INK};
+        }}
+
+        [data-testid="stAppViewContainer"] {{
+            background: #FFFFFF;
+        }}
+        [data-testid="stHeader"] {{
+            background: transparent;
+        }}
+
+        h1, h2, h3, h4 {{
+            font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+            font-weight: 700;
+            letter-spacing: -0.015em;
+            color: {INK};
+        }}
+        [data-testid="stMarkdownContainer"] p {{
+            color: {INK};
+        }}
+        [data-testid="stCaptionContainer"], .stCaption {{
+            color: {INK_MUTED};
+        }}
+
+        /* Buttons -------------------------------------------------- */
+        .stButton > button, .stDownloadButton > button, .stFormSubmitButton > button {{
+            border-radius: 10px;
+            font-weight: 600;
+            border: 1px solid {LINE};
+            background: #FFFFFF;
+            color: {INK};
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+            transition: transform 0.06s ease, box-shadow 0.15s ease;
+        }}
+        .stButton > button:hover, .stDownloadButton > button:hover, .stFormSubmitButton > button:hover {{
+            border-color: {ADAC_GELB_DUNKEL};
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }}
+        .stButton > button:active, .stDownloadButton > button:active {{
+            transform: scale(0.98);
+        }}
+        .stButton > button[kind="primary"], .stDownloadButton > button[kind="primary"],
+        .stFormSubmitButton > button[kind="primary"] {{
+            background: {ADAC_GELB};
+            border: 1px solid {ADAC_GELB_DUNKEL};
+            color: {INK};
+            box-shadow: 0 2px 8px rgba(230,184,0,0.35);
+        }}
+        .stButton > button[kind="primary"]:hover, .stDownloadButton > button[kind="primary"]:hover {{
+            background: {ADAC_GELB_DUNKEL};
+            box-shadow: 0 3px 10px rgba(230,184,0,0.45);
+        }}
+
+        /* Inputs ----------------------------------------------------- */
+        .stTextInput input, .stNumberInput input, .stDateInput input,
+        [data-baseweb="select"] > div, .stTextArea textarea {{
+            border-radius: 10px !important;
+            border: 1px solid {LINE} !important;
+            background: {SURFACE} !important;
+            box-shadow: none !important;
+        }}
+        .stTextInput input:focus, .stNumberInput input:focus, .stDateInput input:focus,
+        [data-baseweb="select"]:focus-within > div {{
+            border-color: {ADAC_GELB_DUNKEL} !important;
+            box-shadow: 0 0 0 3px rgba(255,204,0,0.35) !important;
+        }}
+
+        /* Checkboxen: gelber Haken statt Standard-Rot ---------------- */
+        .stCheckbox [data-baseweb="checkbox"] div[aria-checked="true"] {{
+            background-color: {ADAC_GELB} !important;
+            border-color: {ADAC_GELB_DUNKEL} !important;
+        }}
+        .stCheckbox [data-baseweb="checkbox"] svg {{
+            fill: {INK} !important;
+        }}
+
+        /* Karten-Optik für Expander & Code-Block --------------------- */
+        [data-testid="stExpander"] {{
+            border: 1px solid {LINE};
+            border-radius: 14px;
+            background: {SURFACE};
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }}
+        [data-testid="stExpander"] summary {{
+            font-weight: 600;
+        }}
+        [data-testid="stCodeBlock"] {{
+            border-radius: 12px;
+            border: 1px solid {LINE};
+        }}
+
+        /* Divider dezenter ------------------------------------------- */
+        hr {{
+            border-color: {LINE};
+        }}
+
+        /* Downloadbutton-Liste: etwas Luft --------------------------- */
+        .stDownloadButton {{
+            margin-bottom: 4px;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+_inject_custom_css()
+
 
 def _check_password() -> bool:
     """Zeigt ein einfaches Passwort-Gate, bevor die App gerendert wird.
