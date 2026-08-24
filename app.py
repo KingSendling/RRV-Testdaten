@@ -65,7 +65,7 @@ def _inject_custom_css() -> None:
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-        html, body, [class*="st-"], [data-testid="stAppViewContainer"] {{
+        html, body, [data-testid="stAppViewContainer"] {{
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
                 "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             color: {INK};
