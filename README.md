@@ -44,6 +44,16 @@ alle anderen Datumsfelder (Storno, Reisezeitraum, Buchung, AU-Zeitraum …)
 verschieben sich automatisch um denselben Abstand mit, damit der Testfall
 zeitlich schlüssig bleibt. Das Geburtsdatum ändert sich nicht.
 
+## Prozess-JSON (Omnia)
+
+Nach dem Generieren zeigt Abschnitt "6. Prozess-JSON (Omnia)" ein kopierbares
+JSON mit den Dokumenteneingangs-Metadaten für die "Schadenmeldung (Formular)"
+(4 Seiten, Dokumenttyp `SMF`) passend zum aktuellen Testfall – inkl.
+zufälliger `externalRefId`/`externalDocumentId` und automatisch auf 9-stellig
+numerisch normierter `mglNr`. `processId`, `inputDate` und `scanDate` sind
+system-/zeitpunktabhängige Werte und müssen manuell in die drei Felder
+darüber eingetragen werden.
+
 ## Datumslogik
 
 Das Buchungsdatum liegt immer vor oder am selben Tag wie das Stornodatum
@@ -70,6 +80,7 @@ generators/online_schadenmeldung.py Online-Schadenmeldung (angelehnt an das ADAC
 generators/deckblatt.py             Deckblatt mit Fallübersicht
 utils/fake_data.py                  Falldaten-Modell, IBAN-Generator, Datumslogik
 utils/pdf_helpers.py                Gemeinsame PDF-Bausteine (Wasserzeichen, Layouts)
+utils/prozess_json.py               Prozess-/Dokumenteneingangs-JSON für das Omnia-Zielsystem
 ```
 
 ## Hinweise

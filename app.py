@@ -11,6 +11,7 @@ import io
 import json
 import random
 import re
+import uuid
 import zipfile
 from dataclasses import replace
 from datetime import date, timedelta
@@ -26,6 +27,7 @@ from generators.online_schadenmeldung import erzeuge_online_schadenmeldung
 from generators.rechnung import erzeuge_rechnung
 from generators.schadenmeldung import erzeuge_schadenmeldung
 from generators.storno import erzeuge_storno
+from utils.prozess_json import baue_prozess_json
 from utils.fake_data import (
     FallDaten,
     KRANKHEITEN_VORSCHLAEGE,
@@ -138,6 +140,12 @@ def _init_state():
     st.session_state.generated = {}
     st.session_state.generated_fall_json = None
     st.session_state.generated_fall_json_fname = None
+    st.session_state.prozess_external_ref_id = None
+    st.session_state.prozess_external_document_id = None
+
+    st.session_state["in_process_id"] = ""
+    st.session_state["in_input_date"] = ""
+    st.session_state["in_scan_date"] = ""
 
     st.session_state["in_krankheit_choice"] = fall.krankheit
     st.session_state["in_krankheit_freitext"] = ""
@@ -494,6 +502,8 @@ if generieren_clicked:
         st.session_state.generated_fall_json_fname = (
             f"{mgl_nr_slug}_Testfall_{name_slug}_{heute_str}.json"
         )
+        st.session_state.prozess_external_ref_id = str(uuid.uuid4())
+        st.session_state.prozess_external_document_id = f"SMF-{rng.randint(100000, 999999)}"
 
         restliche_warnungen = pruefe_datumslogik(fall)
         for w in restliche_warnungen:
@@ -543,3 +553,42 @@ if st.session_state.generated:
             mime="application/pdf",
             key=f"dl_{fname}",
         )
+
+    st.divider()
+    st.subheader("6. Prozess-JSON (Omnia)")
+    st.caption(
+        "Dokumenteneingangs-Metadaten für die 'Schadenmeldung (Formular)' "
+        "(4 Seiten, Dokumenttyp SMF), passend zum aktuellen Testfall. "
+        "ProcessID, Eingangs- und Scan-Datum sind dir nicht bekannte, "
+        "system-/zeitpunktabhängige Werte – bitte manuell eintragen."
+    )
+
+    pj_col1, pj_col2, pj_col3 = st.columns(3)
+    pj_col1.text_input(
+        "ProcessID",
+        key="in_process_id",
+        placeholder="z. B. 35427ae3-30cf-4f7b-d6dc-08df01ac6554",
+    )
+    pj_col2.text_input(
+        "inputDate",
+        key="in_input_date",
+        placeholder="2026-08-24T12:50:41.506Z",
+    )
+    pj_col3.text_input(
+        "scanDate",
+        key="in_scan_date",
+        placeholder="2026-08-24T12:50:41.506Z",
+    )
+
+    prozess_json_dict = baue_prozess_json(
+        st.session_state.fall,
+        external_ref_id=st.session_state.prozess_external_ref_id,
+        external_document_id=st.session_state.prozess_external_document_id,
+        process_id=st.session_state["in_process_id"],
+        input_date=st.session_state["in_input_date"],
+        scan_date=st.session_state["in_scan_date"],
+    )
+    st.code(
+        json.dumps(prozess_json_dict, ensure_ascii=False, indent=2),
+        language="json",
+    )
