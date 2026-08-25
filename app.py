@@ -44,8 +44,8 @@ from utils.fake_data import (
 )
 
 st.set_page_config(
-    page_title="RRV Testdokumente Generator",
-    page_icon="🧾",
+    page_title="Schadenschmiede – RRV Testdokumente",
+    page_icon="🔨",
     layout="wide",
 )
 
@@ -55,6 +55,42 @@ INK = "#1D1D1F"
 INK_MUTED = "#6E6E73"
 SURFACE = "#F5F5F7"
 LINE = "#E4E4E7"
+
+
+def _logo_svg(size: int = 52) -> str:
+    """Amboss trägt ein Dokument mit geknickter Ecke - das Schadenschmiede-
+    Zeichen, als Inline-SVG in den App-Farben."""
+    return f"""<svg viewBox="0 0 240 240" width="{size}" height="{size}"
+        xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+        <rect x="72" y="176" width="96" height="18" rx="4" fill="{INK}"/>
+        <polygon points="92,176 148,176 138,146 102,146" fill="{INK}"/>
+        <polygon points="60,146 180,146 160,112 80,112" fill="{INK}"/>
+        <rect x="46" y="88" width="148" height="30" rx="6" fill="{INK}"/>
+        <polygon points="46,93 46,113 16,103" fill="{INK}"/>
+        <g transform="rotate(-6 120 66)">
+            <rect x="88" y="20" width="64" height="88" rx="6" fill="#FFFFFF" stroke="{INK}" stroke-width="6"/>
+            <polygon points="152,20 152,46 126,20" fill="{ADAC_GELB}" stroke="{INK}" stroke-width="6" stroke-linejoin="round"/>
+            <line x1="100" y1="58" x2="138" y2="58" stroke="{INK}" stroke-width="6" stroke-linecap="round"/>
+            <line x1="100" y1="74" x2="138" y2="74" stroke="{INK}" stroke-width="6" stroke-linecap="round"/>
+            <line x1="100" y1="90" x2="122" y2="90" stroke="{INK}" stroke-width="6" stroke-linecap="round"/>
+        </g>
+    </svg>"""
+
+
+def _logo_lockup(icon_size: int = 52, brand_size: int = 30) -> str:
+    """Zeichen + zweizeilige Wortmarke ('Schaden' / 'SCHMIEDE') als HTML-
+    Block, für Kopfzeile und Login-Bildschirm."""
+    return f"""
+    <div style="display:flex; align-items:center; gap:16px; margin-bottom:2px;">
+        {_logo_svg(icon_size)}
+        <div style="display:flex; flex-direction:column; line-height:1.05;">
+            <span style="font-size:12px; font-weight:600; letter-spacing:0.22em;
+                text-transform:uppercase; color:{INK_MUTED};">Schaden</span>
+            <span style="font-size:{brand_size}px; font-weight:900; letter-spacing:-0.01em;
+                color:{INK};">SCHMIEDE</span>
+        </div>
+    </div>
+    """
 
 
 def _inject_custom_css() -> None:
@@ -204,8 +240,8 @@ def _check_password() -> bool:
         )
         return True
 
-    st.title("🔒 RRV Testdokumente Generator")
-    st.caption("Bitte Passwort eingeben, um fortzufahren.")
+    st.markdown(_logo_lockup(), unsafe_allow_html=True)
+    st.caption("🔒 Bitte Passwort eingeben, um fortzufahren.")
 
     with st.form("login_form"):
         pw = st.text_input("Passwort", type="password")
@@ -382,10 +418,11 @@ def _aktueller_fall_mit_core_ueberschrieben() -> FallDaten:
 
 _init_state()
 
-st.title("🧾 RRV Testdokumente Generator")
+st.markdown(_logo_lockup(icon_size=56, brand_size=32), unsafe_allow_html=True)
 st.caption(
-    "Interne App zur Erzeugung synthetischer Testdokumente für den Camunda-"
-    "Prozess der Reiserücktrittsversicherung. Alle Daten sind frei erfunden."
+    "RRV Testdokumente Generator – interne App zur Erzeugung synthetischer "
+    "Testdokumente für den Camunda-Prozess der Reiserücktrittsversicherung. "
+    "Alle Daten sind frei erfunden."
 )
 
 tp_col, tf_col = st.columns(2)

@@ -1,4 +1,4 @@
-# RRV Testdokumente Generator
+# Schadenschmiede
 
 Interne Streamlit-App zur Erzeugung synthetischer Testdokumente für den
 Camunda-Prozess der Reiserücktrittsversicherung (RRV). Alle erzeugten Daten
@@ -13,6 +13,10 @@ als Web-Font-Fallback auf anderen Geräten, damit es überall nach Apple-Design
 aussieht statt nur auf Apple-Geräten. Konfiguriert über
 [.streamlit/config.toml](.streamlit/config.toml) (Grundfarben) und
 zusätzliches CSS in `app.py` (Schrift, Rundungen, Schatten).
+
+Das Logo (Amboss trägt ein Dokument mit geknickter Ecke) ist als Inline-SVG
+in `_logo_svg()`/`_logo_lockup()` in `app.py` umgesetzt und bildet die
+Kopfzeile sowie den Login-Bildschirm.
 
 ## Setup
 
