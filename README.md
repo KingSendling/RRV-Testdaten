@@ -59,10 +59,12 @@ zeitlich schlüssig bleibt. Das Geburtsdatum ändert sich nicht.
 Nach dem Generieren zeigt Abschnitt "6. Prozess-JSON (Omnia)" ein kopierbares
 JSON mit den Dokumenteneingangs-Metadaten für die "Schadenmeldung (Formular)"
 (4 Seiten, Dokumenttyp `SMF`) passend zum aktuellen Testfall – inkl.
-zufälliger `externalRefId`/`externalDocumentId` und automatisch auf 9-stellig
-numerisch normierter `mglNr`. `processId`, `inputDate` und `scanDate` sind
-system-/zeitpunktabhängige Werte und müssen manuell in die drei Felder
-darüber eingetragen werden.
+automatisch auf 9-stellig numerisch normierter `mglNr`. `externalRefId` wird
+zufällig vorbelegt, lässt sich aber im Feld darüber jederzeit manuell
+überschreiben oder per "🎲 Neu" neu auswürfeln (`externalDocumentId` bleibt
+zufällig). `processId`, `inputDate` und `scanDate` sind system-/
+zeitpunktabhängige Werte und müssen manuell in die drei Felder darunter
+eingetragen werden.
 
 ## Datumslogik
 

@@ -267,9 +267,9 @@ def _init_state():
     st.session_state.generated = {}
     st.session_state.generated_fall_json = None
     st.session_state.generated_fall_json_fname = None
-    st.session_state.prozess_external_ref_id = None
     st.session_state.prozess_external_document_id = None
 
+    st.session_state["in_external_ref_id"] = ""
     st.session_state["in_process_id"] = ""
     st.session_state["in_input_date"] = ""
     st.session_state["in_scan_date"] = ""
@@ -629,7 +629,7 @@ if generieren_clicked:
         st.session_state.generated_fall_json_fname = (
             f"{mgl_nr_slug}_Testfall_{name_slug}_{heute_str}.json"
         )
-        st.session_state.prozess_external_ref_id = str(uuid.uuid4())
+        st.session_state["in_external_ref_id"] = str(uuid.uuid4())
         st.session_state.prozess_external_document_id = f"SMF-{rng.randint(100000, 999999)}"
 
         restliche_warnungen = pruefe_datumslogik(fall)
@@ -690,6 +690,20 @@ if st.session_state.generated:
         "system-/zeitpunktabhängige Werte – bitte manuell eintragen."
     )
 
+    refid_col, refid_btn_col = st.columns([3, 1])
+    if refid_btn_col.button(
+        "🎲 Neu",
+        help="Neue zufällige externalRefId generieren",
+        use_container_width=True,
+        key="btn_neue_external_ref_id",
+    ):
+        st.session_state["in_external_ref_id"] = str(uuid.uuid4())
+    refid_col.text_input(
+        "externalRefId",
+        key="in_external_ref_id",
+        help="Zufällig vorbelegt, kann bei Bedarf manuell überschrieben werden.",
+    )
+
     pj_col1, pj_col2, pj_col3 = st.columns(3)
     pj_col1.text_input(
         "ProcessID",
@@ -709,7 +723,7 @@ if st.session_state.generated:
 
     prozess_json_dict = baue_prozess_json(
         st.session_state.fall,
-        external_ref_id=st.session_state.prozess_external_ref_id,
+        external_ref_id=st.session_state["in_external_ref_id"],
         external_document_id=st.session_state.prozess_external_document_id,
         process_id=st.session_state["in_process_id"],
         input_date=st.session_state["in_input_date"],
