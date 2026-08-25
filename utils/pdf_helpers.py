@@ -10,10 +10,24 @@ from reportlab.lib.colors import HexColor
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen.canvas import Canvas
+from pypdf import PdfReader, PdfWriter
 
 from data.providers import Provider
 
 PAGE_W, PAGE_H = A4
+
+
+def kombiniere_pdfs(pdfs: list[bytes]) -> bytes:
+    """Fügt mehrere PDFs (als Bytes) in der gegebenen Reihenfolge zu einem
+    einzigen PDF zusammen."""
+    writer = PdfWriter()
+    for pdf_bytes in pdfs:
+        reader = PdfReader(io.BytesIO(pdf_bytes))
+        for page in reader.pages:
+            writer.add_page(page)
+    buf = io.BytesIO()
+    writer.write(buf)
+    return buf.getvalue()
 
 
 def fmt_datum(d: date | None) -> str:

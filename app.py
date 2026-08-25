@@ -27,6 +27,7 @@ from generators.online_schadenmeldung import erzeuge_online_schadenmeldung
 from generators.rechnung import erzeuge_rechnung
 from generators.schadenmeldung import erzeuge_schadenmeldung
 from generators.storno import erzeuge_storno
+from utils.pdf_helpers import kombiniere_pdfs
 from utils.prozess_json import COVERAGE_PACKAGES, EINGANGSKANAELE, baue_prozess_json
 from utils.fake_data import (
     FallDaten,
@@ -282,6 +283,8 @@ def _init_state():
     st.session_state.generated_fall_json = None
     st.session_state.generated_fall_json_fname = None
     st.session_state.generated_dateiname_praefix = ""
+    st.session_state.generated_kombiniert_pdf = None
+    st.session_state.generated_kombiniert_pdf_fname = None
     st.session_state.prozess_dokument_typen = []
 
     st.session_state["in_external_ref_id"] = ""
@@ -663,6 +666,10 @@ if generieren_clicked:
         ergebnisse = {deckblatt_fname: deckblatt_pdf, **ergebnisse}
 
         st.session_state.generated = ergebnisse
+        st.session_state.generated_kombiniert_pdf = kombiniere_pdfs(list(ergebnisse.values()))
+        st.session_state.generated_kombiniert_pdf_fname = (
+            f"{dateiname_praefix}{mgl_nr_slug}_Gesamtdokument_{name_slug}_{heute_str}.pdf"
+        )
         st.session_state.generated_fall_json = json.dumps(
             fall_zu_dict(fall, ausgewaehlter_anbieter.name), ensure_ascii=False, indent=2
         )
@@ -712,6 +719,15 @@ if st.session_state.generated:
         mime="application/zip",
         type="primary",
     )
+
+    if st.session_state.generated_kombiniert_pdf:
+        st.download_button(
+            "⬇️ Alle Dokumente als ein PDF herunterladen",
+            data=st.session_state.generated_kombiniert_pdf,
+            file_name=st.session_state.generated_kombiniert_pdf_fname,
+            mime="application/pdf",
+            help="Alle erzeugten PDFs in dieser Reihenfolge zu einer Datei zusammengefügt.",
+        )
 
     if st.session_state.generated_fall_json:
         st.download_button(

@@ -34,9 +34,9 @@ python -m venv .venv
 4. Optional: "Neuen Zufallsfall generieren" würfelt alle Zusatzfelder
    (Rechnungsnummern, Beträge, Arztname …) neu, ohne die oben gesetzten
    Kernfelder oder den gewählten Anbieter zu verändern.
-5. "Dokumente generieren" klicken und die PDFs einzeln oder als ZIP
-   herunterladen. Ein Deckblatt mit allen Falldaten wird automatisch
-   mitgeneriert.
+5. "Dokumente generieren" klicken und die PDFs einzeln, als ZIP oder als ein
+   zusammengefügtes Gesamt-PDF herunterladen. Ein Deckblatt mit allen
+   Falldaten wird automatisch mitgeneriert.
 
 ## Testperson vorausfüllen
 
