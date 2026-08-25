@@ -38,7 +38,7 @@ def _ort_only(plz_ort: str) -> str:
 def _text_werte(fall: FallDaten, provider: Provider) -> dict[str, str]:
     heute = date.today()
     ort = _ort_only(fall.plz_ort)
-    name_vorname = f"{fall.vorname} {fall.name}"
+    name_vorname = f"{fall.name}, {fall.vorname}"
 
     F = TEXT_FELDER_SCHADENMELDUNG
     werte = {
