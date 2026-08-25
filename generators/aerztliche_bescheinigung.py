@@ -66,6 +66,14 @@ def _stempel_overlay_pdf(fall: FallDaten) -> bytes:
     return buf.getvalue()
 
 
+def _diagnose_mit_icd10(fall: FallDaten) -> str:
+    """Das Formular hat kein eigenes Feld für den ICD-10-Code - er wird
+    daher an den Diagnosetext angehängt."""
+    if fall.icd10_code:
+        return f"{fall.diagnose_text} (ICD-10: {fall.icd10_code})"
+    return fall.diagnose_text
+
+
 def _text_werte(fall: FallDaten) -> dict[str, dict[str, str]]:
     seite5: dict[str, str] = {
         TEXT_FELDER["mgl_nr"]: fall.mgl_nr,
@@ -73,7 +81,7 @@ def _text_werte(fall: FallDaten) -> dict[str, dict[str, str]]:
         TEXT_FELDER["geburtsdatum"]: fmt_datum(fall.geburtsdatum),
         TEXT_FELDER["strasse"]: fall.strasse,
         TEXT_FELDER["plz_ort"]: fall.plz_ort,
-        TEXT_FELDER["diagnose"]: fall.diagnose_text,
+        TEXT_FELDER["diagnose"]: _diagnose_mit_icd10(fall),
         TEXT_FELDER["datum_diagnosestellung"]: fmt_datum(fall.ereignisdatum),
         TEXT_FELDER["datum_erster_arztbesuch"]: fmt_datum(fall.erster_arztbesuch_datum),
         TEXT_FELDER["therapie"]: fall.therapie_text,

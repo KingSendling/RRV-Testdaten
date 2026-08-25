@@ -31,6 +31,7 @@ from utils.pdf_helpers import kombiniere_pdfs
 from utils.prozess_json import COVERAGE_PACKAGES, EINGANGSKANAELE, baue_prozess_json
 from utils.fake_data import (
     FallDaten,
+    ICD10_VORSCHLAEGE,
     KRANKHEITEN_VORSCHLAEGE,
     erzwinge_buchung_vor_storno_und_reise,
     fall_aus_dict,
@@ -345,6 +346,8 @@ def _init_state():
 
     st.session_state["in_krankheit_choice"] = fall.krankheit
     st.session_state["in_krankheit_freitext"] = ""
+    st.session_state["in_icd10_choice"] = _icd10_option_text(fall.krankheit)
+    st.session_state["in_icd10_freitext"] = ""
     st.session_state["in_mgl_nr"] = fall.mgl_nr
     st.session_state["in_name"] = fall.name
     st.session_state["in_vorname"] = fall.vorname
@@ -376,9 +379,22 @@ def _aktuelle_krankheit() -> str:
     return choice
 
 
+def _icd10_option_text(krankheit: str) -> str:
+    code, bezeichnung = ICD10_VORSCHLAEGE.get(krankheit, ICD10_VORSCHLAEGE["Grippaler Infekt"])
+    return f"{code} – {bezeichnung}"
+
+
+def _aktueller_icd10_code() -> str:
+    choice = st.session_state.get("in_icd10_choice", _icd10_option_text(KRANKHEITEN_VORSCHLAEGE[0]))
+    if choice == FREITEXT_SENTINEL:
+        return st.session_state.get("in_icd10_freitext", "").strip()
+    return choice.split(" – ")[0]
+
+
 def _core_falldaten_aus_eingabe() -> FallDaten:
     return FallDaten(
         krankheit=_aktuelle_krankheit(),
+        icd10_code=_aktueller_icd10_code(),
         mgl_nr=st.session_state["in_mgl_nr"],
         name=st.session_state["in_name"],
         vorname=st.session_state["in_vorname"],
@@ -396,6 +412,7 @@ def _core_falldaten_aus_eingabe() -> FallDaten:
 def _core_feldnamen() -> list[str]:
     return [
         "krankheit",
+        "icd10_code",
         "mgl_nr",
         "name",
         "vorname",
@@ -486,6 +503,14 @@ with st.expander("📂 Bestehenden Testfall wiederholen (optional)"):
                 else:
                     st.session_state["in_krankheit_choice"] = FREITEXT_SENTINEL
                     st.session_state["in_krankheit_freitext"] = gewaehlte_krankheit
+                if verschoben.icd10_code and verschoben.icd10_code == ICD10_VORSCHLAEGE.get(
+                    gewaehlte_krankheit, (None, None)
+                )[0]:
+                    st.session_state["in_icd10_choice"] = _icd10_option_text(gewaehlte_krankheit)
+                    st.session_state["in_icd10_freitext"] = ""
+                else:
+                    st.session_state["in_icd10_choice"] = FREITEXT_SENTINEL
+                    st.session_state["in_icd10_freitext"] = verschoben.icd10_code
                 st.session_state["in_mgl_nr"] = verschoben.mgl_nr
                 st.session_state["in_name"] = verschoben.name
                 st.session_state["in_vorname"] = verschoben.vorname
@@ -541,6 +566,18 @@ with col1:
     st.selectbox("Krankheit / Grund", krankheit_optionen, key="in_krankheit_choice")
     if st.session_state["in_krankheit_choice"] == FREITEXT_SENTINEL:
         st.text_input("Krankheit / Grund (Freitext)", key="in_krankheit_freitext")
+
+    icd10_col, icd10_btn_col = st.columns([3, 1])
+    if icd10_btn_col.button(
+        "🎲 Passend zur Krankheit",
+        help="ICD-10-Code passend zur gewählten Krankheit übernehmen",
+        use_container_width=True,
+    ):
+        st.session_state["in_icd10_choice"] = _icd10_option_text(_aktuelle_krankheit())
+    icd10_optionen = [_icd10_option_text(k) for k in KRANKHEITEN_VORSCHLAEGE] + [FREITEXT_SENTINEL]
+    icd10_col.selectbox("ICD-10-Code (Ärztliche Bescheinigung)", icd10_optionen, key="in_icd10_choice")
+    if st.session_state["in_icd10_choice"] == FREITEXT_SENTINEL:
+        st.text_input("ICD-10-Code (Freitext)", key="in_icd10_freitext")
 
     st.text_input("Mgl.-Nr. (ADAC Mitglieds-/Kundennummer)", key="in_mgl_nr")
     st.text_input("Name (Nachname)", key="in_name")

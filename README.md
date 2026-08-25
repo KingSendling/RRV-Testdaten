@@ -32,6 +32,10 @@ python -m venv .venv
    erzeugten Dateinamen mit z. B. `TP10_TF01_` beginnen (nützlich, um
    Testläufe eindeutig zuzuordnen). Leer lassen für die Standard-Dateinamen.
 1. Falldaten in der Eingabemaske ausfüllen (Krankheit, Name, Adresse, Daten, IBAN …).
+   Der ICD-10-Code wird passend zur gewählten Krankheit vorgeschlagen (Button
+   "🎲 Passend zur Krankheit"), lässt sich aber frei ändern oder als Freitext
+   eingeben. Da das Original-Formular kein eigenes ICD-10-Feld hat, wird der
+   Code an den Diagnosetext der Ärztlichen Bescheinigung angehängt.
 2. Gewünschte Dokumenttypen auswählen (Rechnung, Buchungsbestätigung, Storno,
    Ärztliche Bescheinigung, Schadenmeldung (Formular), Online-Schadenmeldung).
 3. Reiseanbieter auswählen (gilt für Rechnung, Buchungsbestätigung & Storno).

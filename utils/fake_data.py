@@ -60,6 +60,23 @@ BANKNAMEN = [
     "Testhausen Kreissparkasse",
 ]
 
+# Ordnet eine Krankheit einem plausiblen ICD-10-GM-Code + Bezeichnung zu.
+# Die Ärztliche Bescheinigung hat kein eigenes Formularfeld für den ICD-10-
+# Code - er wird stattdessen an den Diagnosetext angehängt (siehe
+# generators/aerztliche_bescheinigung.py).
+ICD10_VORSCHLAEGE: dict[str, tuple[str, str]] = {
+    "Grippaler Infekt": ("J06.9", "Akute Infektion der oberen Atemwege, nicht näher bezeichnet"),
+    "Magen-Darm-Infekt": ("A09", "Sonstige und nicht näher bezeichnete Gastroenteritis und Kolitis"),
+    "Bänderriss (Sprunggelenk)": ("S93.4", "Distorsion und Zerrung des oberen Sprunggelenkes"),
+    "Schwangerschaftskomplikation": ("O47.0", "Vorzeitige Wehen ohne Entbindung"),
+    "Akute Blinddarmentzündung": ("K35.80", "Akute Appendizitis, nicht näher bezeichnet"),
+    "Bandscheibenvorfall": ("M51.2", "Sonstige näher bezeichnete Bandscheibenverlagerung"),
+    "Knochenbruch (Unterarm)": ("S52.5", "Distale Fraktur des Radius"),
+    "Herz-Kreislauf-Beschwerden": ("I10", "Essentielle Hypertonie"),
+    "Migräneattacke": ("G43.9", "Migräne, nicht näher bezeichnet"),
+    "Covid-19-Infektion": ("U07.1", "COVID-19, Virus nachgewiesen"),
+}
+
 # Ordnet eine Krankheit einer der 9 Stornierungsgrund-Kategorien des
 # Schadenmeldeformulars zu (Exportwerte "1"-"9" von Feld 17).
 STORNIERUNGSGRUND_KATEGORIEN: dict[str, str] = {
@@ -128,6 +145,7 @@ def is_valid_iban_checksum(iban: str) -> bool:
 class FallDaten:
     # --- Kernfelder: vom User eingegeben, bleiben bei "Neuer Zufallsfall" erhalten ---
     krankheit: str = "Grippaler Infekt"
+    icd10_code: str = ""
     mgl_nr: str = ""
     name: str = ""
     vorname: str = ""
