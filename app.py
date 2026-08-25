@@ -232,6 +232,20 @@ def _slug(text: str) -> str:
     return text.strip("_")
 
 
+def _dateiname_praefix() -> str:
+    """Baut den optionalen Dateinamen-Präfix aus Teilprozess- und
+    Testfall-Kennung, z. B. 'TP10_TF01_'. Leer, falls beide Felder leer
+    sind; einzeln nutzbar, falls nur eines gesetzt ist."""
+    tp = _slug(st.session_state.get("in_teilprozess", ""))
+    tf = _slug(st.session_state.get("in_testfall", ""))
+    teile = []
+    if tp:
+        teile.append(f"TP{tp}")
+    if tf:
+        teile.append(f"TF{tf}")
+    return "_".join(teile) + "_" if teile else ""
+
+
 def _anbieter_by_name(name: str):
     for p in PROVIDERS:
         if p.name == name:
@@ -267,6 +281,7 @@ def _init_state():
     st.session_state.generated = {}
     st.session_state.generated_fall_json = None
     st.session_state.generated_fall_json_fname = None
+    st.session_state.generated_dateiname_praefix = ""
     st.session_state.prozess_dokument_typen = []
 
     st.session_state["in_external_ref_id"] = ""
@@ -277,6 +292,9 @@ def _init_state():
     st.session_state["in_ereignisland"] = "DE"
     st.session_state["in_coverage_package_choice"] = COVERAGE_PACKAGES[0]
     st.session_state["in_coverage_package_freitext"] = ""
+
+    st.session_state["in_teilprozess"] = ""
+    st.session_state["in_testfall"] = ""
 
     st.session_state["in_krankheit_choice"] = fall.krankheit
     st.session_state["in_krankheit_freitext"] = ""
@@ -358,6 +376,23 @@ st.caption(
     "Interne App zur Erzeugung synthetischer Testdokumente für den Camunda-"
     "Prozess der Reiserücktrittsversicherung. Alle Daten sind frei erfunden."
 )
+
+tp_col, tf_col = st.columns(2)
+tp_col.text_input(
+    "Teilprozess (TP)",
+    key="in_teilprozess",
+    placeholder="z. B. 10",
+    help="Optional. Wird als 'TP<Wert>_' vor den Dateinamen gestellt.",
+)
+tf_col.text_input(
+    "Testfall (TF)",
+    key="in_testfall",
+    placeholder="z. B. 01",
+    help="Optional. Wird als 'TF<Wert>_' vor den Dateinamen gestellt.",
+)
+dateiname_vorschau = _dateiname_praefix()
+if dateiname_vorschau:
+    st.caption(f"Dateinamen beginnen mit: `{dateiname_vorschau}`")
 
 with st.expander("📂 Bestehenden Testfall wiederholen (optional)"):
     st.caption(
@@ -590,40 +625,41 @@ if generieren_clicked:
         heute_str = date.today().isoformat()
         mgl_nr_slug = _slug(fall.mgl_nr)
         name_slug = f"{_slug(fall.name)}{_slug(fall.vorname)}"
+        dateiname_praefix = _dateiname_praefix()
         ergebnisse: dict[str, bytes] = {}
 
         if DOC_RECHNUNG in ausgewaehlte_typen:
             pdf = erzeuge_rechnung(fall, ausgewaehlter_anbieter, rng)
-            fname = f"{mgl_nr_slug}_Rechnung_{_slug(ausgewaehlter_anbieter.name)}_{name_slug}_{heute_str}.pdf"
+            fname = f"{dateiname_praefix}{mgl_nr_slug}_Rechnung_{_slug(ausgewaehlter_anbieter.name)}_{name_slug}_{heute_str}.pdf"
             ergebnisse[fname] = pdf
 
         if DOC_BUCHUNG in ausgewaehlte_typen:
             pdf = erzeuge_buchungsbestaetigung(fall, ausgewaehlter_anbieter, rng)
-            fname = f"{mgl_nr_slug}_Buchungsbestaetigung_{_slug(ausgewaehlter_anbieter.name)}_{name_slug}_{heute_str}.pdf"
+            fname = f"{dateiname_praefix}{mgl_nr_slug}_Buchungsbestaetigung_{_slug(ausgewaehlter_anbieter.name)}_{name_slug}_{heute_str}.pdf"
             ergebnisse[fname] = pdf
 
         if DOC_STORNO in ausgewaehlte_typen:
             pdf = erzeuge_storno(fall, ausgewaehlter_anbieter, rng)
-            fname = f"{mgl_nr_slug}_Storno_{_slug(ausgewaehlter_anbieter.name)}_{name_slug}_{heute_str}.pdf"
+            fname = f"{dateiname_praefix}{mgl_nr_slug}_Storno_{_slug(ausgewaehlter_anbieter.name)}_{name_slug}_{heute_str}.pdf"
             ergebnisse[fname] = pdf
 
         if DOC_AERZTLICH in ausgewaehlte_typen:
             pdf = erzeuge_aerztliche_bescheinigung(fall)
-            fname = f"{mgl_nr_slug}_AerztlicheBescheinigung_{name_slug}_{heute_str}.pdf"
+            fname = f"{dateiname_praefix}{mgl_nr_slug}_AerztlicheBescheinigung_{name_slug}_{heute_str}.pdf"
             ergebnisse[fname] = pdf
 
         if DOC_SCHADENMELDUNG_FORMULAR in ausgewaehlte_typen:
             pdf = erzeuge_schadenmeldung(fall, ausgewaehlter_anbieter)
-            fname = f"{mgl_nr_slug}_Schadenmeldung_{name_slug}_{heute_str}.pdf"
+            fname = f"{dateiname_praefix}{mgl_nr_slug}_Schadenmeldung_{name_slug}_{heute_str}.pdf"
             ergebnisse[fname] = pdf
 
         if DOC_SCHADENMELDUNG_ONLINE in ausgewaehlte_typen:
             pdf = erzeuge_online_schadenmeldung(fall, list(ergebnisse.keys()), rng)
-            fname = f"{mgl_nr_slug}_OnlineSchadenmeldung_{name_slug}_{heute_str}.pdf"
+            fname = f"{dateiname_praefix}{mgl_nr_slug}_OnlineSchadenmeldung_{name_slug}_{heute_str}.pdf"
             ergebnisse[fname] = pdf
 
         deckblatt_pdf = erzeuge_deckblatt(fall, ausgewaehlter_anbieter, list(ergebnisse.keys()))
-        deckblatt_fname = f"{mgl_nr_slug}_00_Deckblatt_{name_slug}_{heute_str}.pdf"
+        deckblatt_fname = f"{dateiname_praefix}{mgl_nr_slug}_00_Deckblatt_{name_slug}_{heute_str}.pdf"
         ergebnisse = {deckblatt_fname: deckblatt_pdf, **ergebnisse}
 
         st.session_state.generated = ergebnisse
@@ -631,8 +667,9 @@ if generieren_clicked:
             fall_zu_dict(fall, ausgewaehlter_anbieter.name), ensure_ascii=False, indent=2
         )
         st.session_state.generated_fall_json_fname = (
-            f"{mgl_nr_slug}_Testfall_{name_slug}_{heute_str}.json"
+            f"{dateiname_praefix}{mgl_nr_slug}_Testfall_{name_slug}_{heute_str}.json"
         )
+        st.session_state.generated_dateiname_praefix = dateiname_praefix
         st.session_state["in_external_ref_id"] = str(uuid.uuid4())
 
         # Reihenfolge der Dokumente in der kombinierten Scan-Übermittlung
@@ -671,7 +708,7 @@ if st.session_state.generated:
     st.download_button(
         "⬇️ Alle Dokumente als ZIP herunterladen",
         data=zip_buf.getvalue(),
-        file_name=f"RRV_Testfall_{date.today().isoformat()}.zip",
+        file_name=f"{st.session_state.get('generated_dateiname_praefix', '')}RRV_Testfall_{date.today().isoformat()}.zip",
         mime="application/zip",
         type="primary",
     )

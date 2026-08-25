@@ -24,6 +24,9 @@ python -m venv .venv
 
 ## Verwendung
 
+0. Optional: "Teilprozess (TP)" und "Testfall (TF)" oben ausfüllen, damit alle
+   erzeugten Dateinamen mit z. B. `TP10_TF01_` beginnen (nützlich, um
+   Testläufe eindeutig zuzuordnen). Leer lassen für die Standard-Dateinamen.
 1. Falldaten in der Eingabemaske ausfüllen (Krankheit, Name, Adresse, Daten, IBAN …).
 2. Gewünschte Dokumenttypen auswählen (Rechnung, Buchungsbestätigung, Storno,
    Ärztliche Bescheinigung, Schadenmeldung (Formular), Online-Schadenmeldung).
