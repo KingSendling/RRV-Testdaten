@@ -14,7 +14,8 @@ import re
 import uuid
 import zipfile
 from dataclasses import replace
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import streamlit as st
 
@@ -274,9 +275,10 @@ FREITEXT_SENTINEL = "Sonstige / Freitext …"
 
 
 def _jetzt_iso_mit_millis() -> str:
-    """Aktuelles UTC-Datum/-Uhrzeit im von Omnia erwarteten Format
+    """Aktuelles Datum/Uhrzeit in der deutschen Zeitzone (München,
+    Europe/Berlin - inkl. Sommer-/Winterzeit) im von Omnia erwarteten Format
     ('2026-08-24T12:50:41.506Z'), als Default für inputDate/scanDate."""
-    jetzt = datetime.now(timezone.utc)
+    jetzt = datetime.now(ZoneInfo("Europe/Berlin"))
     return jetzt.strftime("%Y-%m-%dT%H:%M:%S.") + f"{jetzt.microsecond // 1000:03d}Z"
 
 
@@ -714,7 +716,7 @@ if generieren_clicked:
         st.session_state.fall = fall
 
         rng = random.Random()
-        heute_str = date.today().isoformat()
+        ereignisdatum_str = fall.ereignisdatum.isoformat()
         mgl_nr_slug = _slug(fall.mgl_nr)
         name_slug = f"{_slug(fall.name)}{_slug(fall.vorname)}"
         dateiname_praefix = _dateiname_praefix()
@@ -722,48 +724,48 @@ if generieren_clicked:
 
         if DOC_RECHNUNG in ausgewaehlte_typen:
             pdf = erzeuge_rechnung(fall, ausgewaehlter_anbieter, rng)
-            fname = f"{dateiname_praefix}{mgl_nr_slug}_Rechnung_{_slug(ausgewaehlter_anbieter.name)}_{name_slug}_{heute_str}.pdf"
+            fname = f"{dateiname_praefix}{mgl_nr_slug}_Rechnung_{_slug(ausgewaehlter_anbieter.name)}_{name_slug}_{ereignisdatum_str}.pdf"
             ergebnisse[fname] = pdf
 
         if DOC_BUCHUNG in ausgewaehlte_typen:
             pdf = erzeuge_buchungsbestaetigung(fall, ausgewaehlter_anbieter, rng)
-            fname = f"{dateiname_praefix}{mgl_nr_slug}_Buchungsbestaetigung_{_slug(ausgewaehlter_anbieter.name)}_{name_slug}_{heute_str}.pdf"
+            fname = f"{dateiname_praefix}{mgl_nr_slug}_Buchungsbestaetigung_{_slug(ausgewaehlter_anbieter.name)}_{name_slug}_{ereignisdatum_str}.pdf"
             ergebnisse[fname] = pdf
 
         if DOC_STORNO in ausgewaehlte_typen:
             pdf = erzeuge_storno(fall, ausgewaehlter_anbieter, rng)
-            fname = f"{dateiname_praefix}{mgl_nr_slug}_Storno_{_slug(ausgewaehlter_anbieter.name)}_{name_slug}_{heute_str}.pdf"
+            fname = f"{dateiname_praefix}{mgl_nr_slug}_Storno_{_slug(ausgewaehlter_anbieter.name)}_{name_slug}_{ereignisdatum_str}.pdf"
             ergebnisse[fname] = pdf
 
         if DOC_AERZTLICH in ausgewaehlte_typen:
             pdf = erzeuge_aerztliche_bescheinigung(fall)
-            fname = f"{dateiname_praefix}{mgl_nr_slug}_AerztlicheBescheinigung_{name_slug}_{heute_str}.pdf"
+            fname = f"{dateiname_praefix}{mgl_nr_slug}_AerztlicheBescheinigung_{name_slug}_{ereignisdatum_str}.pdf"
             ergebnisse[fname] = pdf
 
         if DOC_SCHADENMELDUNG_FORMULAR in ausgewaehlte_typen:
             pdf = erzeuge_schadenmeldung(fall, ausgewaehlter_anbieter)
-            fname = f"{dateiname_praefix}{mgl_nr_slug}_Schadenmeldung_{name_slug}_{heute_str}.pdf"
+            fname = f"{dateiname_praefix}{mgl_nr_slug}_Schadenmeldung_{name_slug}_{ereignisdatum_str}.pdf"
             ergebnisse[fname] = pdf
 
         if DOC_SCHADENMELDUNG_ONLINE in ausgewaehlte_typen:
             pdf = erzeuge_online_schadenmeldung(fall, list(ergebnisse.keys()), rng)
-            fname = f"{dateiname_praefix}{mgl_nr_slug}_OnlineSchadenmeldung_{name_slug}_{heute_str}.pdf"
+            fname = f"{dateiname_praefix}{mgl_nr_slug}_OnlineSchadenmeldung_{name_slug}_{ereignisdatum_str}.pdf"
             ergebnisse[fname] = pdf
 
         deckblatt_pdf = erzeuge_deckblatt(fall, ausgewaehlter_anbieter, list(ergebnisse.keys()))
-        deckblatt_fname = f"{dateiname_praefix}{mgl_nr_slug}_00_Deckblatt_{name_slug}_{heute_str}.pdf"
+        deckblatt_fname = f"{dateiname_praefix}{mgl_nr_slug}_00_Deckblatt_{name_slug}_{ereignisdatum_str}.pdf"
         ergebnisse = {deckblatt_fname: deckblatt_pdf, **ergebnisse}
 
         st.session_state.generated = ergebnisse
         st.session_state.generated_kombiniert_pdf = kombiniere_pdfs(list(ergebnisse.values()))
         st.session_state.generated_kombiniert_pdf_fname = (
-            f"{dateiname_praefix}{mgl_nr_slug}_Gesamtdokument_{name_slug}_{heute_str}.pdf"
+            f"{dateiname_praefix}{mgl_nr_slug}_Gesamtdokument_{name_slug}_{ereignisdatum_str}.pdf"
         )
         st.session_state.generated_fall_json = json.dumps(
             fall_zu_dict(fall, ausgewaehlter_anbieter.name), ensure_ascii=False, indent=2
         )
         st.session_state.generated_fall_json_fname = (
-            f"{dateiname_praefix}{mgl_nr_slug}_Testfall_{name_slug}_{heute_str}.json"
+            f"{dateiname_praefix}{mgl_nr_slug}_Testfall_{name_slug}_{ereignisdatum_str}.json"
         )
         st.session_state.generated_dateiname_praefix = dateiname_praefix
         st.session_state["in_external_ref_id"] = str(uuid.uuid4())
