@@ -14,7 +14,7 @@ import re
 import uuid
 import zipfile
 from dataclasses import replace
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 import streamlit as st
 
@@ -273,6 +273,13 @@ PROVIDER_NAMEN = [p.name for p in PROVIDERS]
 FREITEXT_SENTINEL = "Sonstige / Freitext …"
 
 
+def _jetzt_iso_mit_millis() -> str:
+    """Aktuelles UTC-Datum/-Uhrzeit im von Omnia erwarteten Format
+    ('2026-08-24T12:50:41.506Z'), als Default für inputDate/scanDate."""
+    jetzt = datetime.now(timezone.utc)
+    return jetzt.strftime("%Y-%m-%dT%H:%M:%S.") + f"{jetzt.microsecond // 1000:03d}Z"
+
+
 def _slug(text: str) -> str:
     text = re.sub(r"[^A-Za-z0-9]+", "_", text)
     return text.strip("_")
@@ -334,8 +341,8 @@ def _init_state():
 
     st.session_state["in_external_ref_id"] = ""
     st.session_state["in_process_id"] = ""
-    st.session_state["in_input_date"] = ""
-    st.session_state["in_scan_date"] = ""
+    st.session_state["in_input_date"] = _jetzt_iso_mit_millis()
+    st.session_state["in_scan_date"] = _jetzt_iso_mit_millis()
     st.session_state["in_eingangskanal"] = "E-Mail"
     st.session_state["in_ereignisland"] = "DE"
     st.session_state["in_coverage_package_choice"] = COVERAGE_PACKAGES[0]
@@ -760,6 +767,8 @@ if generieren_clicked:
         )
         st.session_state.generated_dateiname_praefix = dateiname_praefix
         st.session_state["in_external_ref_id"] = str(uuid.uuid4())
+        st.session_state["in_input_date"] = _jetzt_iso_mit_millis()
+        st.session_state["in_scan_date"] = _jetzt_iso_mit_millis()
 
         # Reihenfolge der Dokumente in der kombinierten Scan-Übermittlung
         # (SMF, AEB, REISEBU, STORNO-RE) - nur tatsächlich erzeugte Typen.
@@ -844,9 +853,8 @@ if st.session_state.generated:
     st.caption(
         "Dokumenteneingangs-Metadaten für die kombinierte Scan-Übermittlung "
         f"der gewählten Dokumente ({doc_typen_liste}), passend zum aktuellen "
-        "Testfall. ProcessID, Eingangs- und Scan-Datum sind dir nicht "
-        "bekannte, system-/zeitpunktabhängige Werte – bitte manuell "
-        "eintragen."
+        "Testfall. Eingangs- und Scan-Datum sind mit dem aktuellen Zeitpunkt "
+        "vorbelegt, ProcessID ist dir nicht bekannt – bitte manuell eintragen."
     )
 
     refid_col, refid_btn_col = st.columns([3, 1])
@@ -872,12 +880,12 @@ if st.session_state.generated:
     pj_col2.text_input(
         "inputDate",
         key="in_input_date",
-        placeholder="2026-08-24T12:50:41.506Z",
+        help="Vorbelegt mit dem aktuellen UTC-Zeitpunkt, kann bei Bedarf manuell überschrieben werden.",
     )
     pj_col3.text_input(
         "scanDate",
         key="in_scan_date",
-        placeholder="2026-08-24T12:50:41.506Z",
+        help="Vorbelegt mit dem aktuellen UTC-Zeitpunkt, kann bei Bedarf manuell überschrieben werden.",
     )
 
     pj_col4, pj_col5, pj_col6 = st.columns(3)
