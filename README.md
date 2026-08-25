@@ -57,14 +57,25 @@ zeitlich schlüssig bleibt. Das Geburtsdatum ändert sich nicht.
 ## Prozess-JSON (Omnia)
 
 Nach dem Generieren zeigt Abschnitt "6. Prozess-JSON (Omnia)" ein kopierbares
-JSON mit den Dokumenteneingangs-Metadaten für die "Schadenmeldung (Formular)"
-(4 Seiten, Dokumenttyp `SMF`) passend zum aktuellen Testfall – inkl.
-automatisch auf 9-stellig numerisch normierter `mglNr`. `externalRefId` wird
-zufällig vorbelegt, lässt sich aber im Feld darüber jederzeit manuell
-überschreiben oder per "🎲 Neu" neu auswürfeln (`externalDocumentId` bleibt
-zufällig). `processId`, `inputDate` und `scanDate` sind system-/
-zeitpunktabhängige Werte und müssen manuell in die drei Felder darunter
-eingetragen werden.
+JSON mit den Dokumenteneingangs-Metadaten für die kombinierte Scan-
+Übermittlung aller passenden gewählten Dokumente – erkannt werden
+Schadenmeldung (Formular, `SMF`, 4 Seiten), Ärztliche Bescheinigung (`AEB`,
+2 Seiten), Buchungsbestätigung (`REISEBU`, 1 Seite) und Storno-Rechnung
+(`STORNO-RE`, 1 Seite); `sourcePdfMetadata.pageCount` und die Seitenbereiche
+in `documents[]` ergeben sich automatisch aus der Auswahl in Abschnitt 2
+(Rechnung und Online-Schadenmeldung haben keinen bekannten Dokumenttyp-Code
+und tauchen daher nicht auf). `mglNr` wird auf 9-stellig numerisch normiert.
+
+`externalRefId` wird zufällig vorbelegt, lässt sich aber jederzeit manuell
+überschreiben oder per "🎲 Neu" neu auswürfeln (`externalDocumentId`/
+`externalPageId` je Dokument werden deterministisch aus Mitgliedsnummer und
+Dokumenttyp abgeleitet, Schema `{TYP}-{mglNr}-KOMBI-01[-P0N]`).
+`processId`, `inputDate` und `scanDate` sind system-/zeitpunktabhängige
+Werte und müssen manuell eingetragen werden. Zusätzlich wählbar: der
+**Eingangskanal** (E-Mail oder Post – steuert `scanType`/`medium`/
+`recipientAddressType` sowie ob `sender`/`receiver` gesetzt sind), das
+**Ereignisland** (`caseEventCountry`/`claimEventCountry`) und das
+**Tarifpaket** (`coveragePackage`, mit Freitext-Option).
 
 ## Datumslogik
 

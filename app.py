@@ -27,7 +27,7 @@ from generators.online_schadenmeldung import erzeuge_online_schadenmeldung
 from generators.rechnung import erzeuge_rechnung
 from generators.schadenmeldung import erzeuge_schadenmeldung
 from generators.storno import erzeuge_storno
-from utils.prozess_json import baue_prozess_json
+from utils.prozess_json import COVERAGE_PACKAGES, EINGANGSKANAELE, baue_prozess_json
 from utils.fake_data import (
     FallDaten,
     KRANKHEITEN_VORSCHLAEGE,
@@ -267,12 +267,16 @@ def _init_state():
     st.session_state.generated = {}
     st.session_state.generated_fall_json = None
     st.session_state.generated_fall_json_fname = None
-    st.session_state.prozess_external_document_id = None
+    st.session_state.prozess_dokument_typen = []
 
     st.session_state["in_external_ref_id"] = ""
     st.session_state["in_process_id"] = ""
     st.session_state["in_input_date"] = ""
     st.session_state["in_scan_date"] = ""
+    st.session_state["in_eingangskanal"] = "E-Mail"
+    st.session_state["in_ereignisland"] = "DE"
+    st.session_state["in_coverage_package_choice"] = COVERAGE_PACKAGES[0]
+    st.session_state["in_coverage_package_freitext"] = ""
 
     st.session_state["in_krankheit_choice"] = fall.krankheit
     st.session_state["in_krankheit_freitext"] = ""
@@ -630,7 +634,19 @@ if generieren_clicked:
             f"{mgl_nr_slug}_Testfall_{name_slug}_{heute_str}.json"
         )
         st.session_state["in_external_ref_id"] = str(uuid.uuid4())
-        st.session_state.prozess_external_document_id = f"SMF-{rng.randint(100000, 999999)}"
+
+        # Reihenfolge der Dokumente in der kombinierten Scan-Übermittlung
+        # (SMF, AEB, REISEBU, STORNO-RE) - nur tatsächlich erzeugte Typen.
+        prozess_dokument_typen = []
+        if DOC_SCHADENMELDUNG_FORMULAR in ausgewaehlte_typen:
+            prozess_dokument_typen.append("SMF")
+        if DOC_AERZTLICH in ausgewaehlte_typen:
+            prozess_dokument_typen.append("AEB")
+        if DOC_BUCHUNG in ausgewaehlte_typen:
+            prozess_dokument_typen.append("REISEBU")
+        if DOC_STORNO in ausgewaehlte_typen:
+            prozess_dokument_typen.append("STORNO-RE")
+        st.session_state.prozess_dokument_typen = prozess_dokument_typen
 
         restliche_warnungen = pruefe_datumslogik(fall)
         for w in restliche_warnungen:
@@ -683,11 +699,13 @@ if st.session_state.generated:
 
     st.divider()
     st.subheader("6. Prozess-JSON (Omnia)")
+    doc_typen_liste = ", ".join(st.session_state.prozess_dokument_typen) or "–"
     st.caption(
-        "Dokumenteneingangs-Metadaten für die 'Schadenmeldung (Formular)' "
-        "(4 Seiten, Dokumenttyp SMF), passend zum aktuellen Testfall. "
-        "ProcessID, Eingangs- und Scan-Datum sind dir nicht bekannte, "
-        "system-/zeitpunktabhängige Werte – bitte manuell eintragen."
+        "Dokumenteneingangs-Metadaten für die kombinierte Scan-Übermittlung "
+        f"der gewählten Dokumente ({doc_typen_liste}), passend zum aktuellen "
+        "Testfall. ProcessID, Eingangs- und Scan-Datum sind dir nicht "
+        "bekannte, system-/zeitpunktabhängige Werte – bitte manuell "
+        "eintragen."
     )
 
     refid_col, refid_btn_col = st.columns([3, 1])
@@ -721,14 +739,55 @@ if st.session_state.generated:
         placeholder="2026-08-24T12:50:41.506Z",
     )
 
+    pj_col4, pj_col5, pj_col6 = st.columns(3)
+    pj_col4.selectbox(
+        "Eingangskanal",
+        list(EINGANGSKANAELE.keys()),
+        key="in_eingangskanal",
+        help=(
+            "Bestimmt scanType/medium/recipientAddressType sowie ob "
+            "sender/receiver gesetzt sind (bei Post gibt es keine "
+            "E-Mail-Adressen)."
+        ),
+    )
+    pj_col5.text_input(
+        "Ereignisland (caseEventCountry/claimEventCountry)",
+        key="in_ereignisland",
+        max_chars=2,
+        help="Zweistelliger Ländercode, z. B. DE oder PT.",
+    )
+    coverage_optionen = COVERAGE_PACKAGES + [FREITEXT_SENTINEL]
+    pj_col6.selectbox("Tarifpaket (coveragePackage)", coverage_optionen, key="in_coverage_package_choice")
+    if st.session_state["in_coverage_package_choice"] == FREITEXT_SENTINEL:
+        pj_col6.text_input(
+            "Tarifpaket (Freitext)",
+            key="in_coverage_package_freitext",
+        )
+
+    coverage_package_wert = (
+        st.session_state["in_coverage_package_freitext"]
+        if st.session_state["in_coverage_package_choice"] == FREITEXT_SENTINEL
+        else st.session_state["in_coverage_package_choice"]
+    )
+
     prozess_json_dict = baue_prozess_json(
         st.session_state.fall,
+        dokument_typen=st.session_state.prozess_dokument_typen,
         external_ref_id=st.session_state["in_external_ref_id"],
-        external_document_id=st.session_state.prozess_external_document_id,
         process_id=st.session_state["in_process_id"],
         input_date=st.session_state["in_input_date"],
         scan_date=st.session_state["in_scan_date"],
+        eingangskanal=st.session_state["in_eingangskanal"],
+        ereignisland=st.session_state["in_ereignisland"],
+        coverage_package=coverage_package_wert,
     )
+    if not st.session_state.prozess_dokument_typen:
+        st.warning(
+            "⚠️ Keiner der für das Prozess-JSON bekannten Dokumenttypen "
+            "(Schadenmeldung Formular, Ärztliche Bescheinigung, "
+            "Buchungsbestätigung, Storno-Rechnung) wurde generiert – die "
+            "Dokumentenliste im JSON ist daher leer."
+        )
     st.code(
         json.dumps(prozess_json_dict, ensure_ascii=False, indent=2),
         language="json",
