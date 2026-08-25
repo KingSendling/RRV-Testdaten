@@ -113,8 +113,16 @@ def _inject_custom_css() -> None:
         .stFormSubmitButton > button[kind="primary"] {{
             background: {ADAC_GELB};
             border: 1px solid {ADAC_GELB_DUNKEL};
-            color: {INK};
+            color: {INK} !important;
             box-shadow: 0 2px 8px rgba(230,184,0,0.35);
+        }}
+        /* Streamlit setzt die Textfarbe primärer Buttons teils auf einem
+           inneren Element (nicht dem <button> selbst) - dort ebenfalls
+           überschreiben, sonst bleibt der Text bei manchen Buttons weiß. */
+        .stButton > button[kind="primary"] *, .stDownloadButton > button[kind="primary"] *,
+        .stFormSubmitButton > button[kind="primary"] * {{
+            color: {INK} !important;
+            fill: {INK} !important;
         }}
         .stButton > button[kind="primary"]:hover, .stDownloadButton > button[kind="primary"]:hover {{
             background: {ADAC_GELB_DUNKEL};
@@ -712,29 +720,35 @@ if st.session_state.generated:
                 st.session_state.generated_fall_json,
             )
 
-    st.download_button(
+    bundle_col1, bundle_col2, bundle_col3 = st.columns(3)
+    bundle_col1.download_button(
         "⬇️ Alle Dokumente als ZIP herunterladen",
         data=zip_buf.getvalue(),
         file_name=f"{st.session_state.get('generated_dateiname_praefix', '')}RRV_Testfall_{date.today().isoformat()}.zip",
         mime="application/zip",
         type="primary",
+        use_container_width=True,
     )
 
     if st.session_state.generated_kombiniert_pdf:
-        st.download_button(
+        bundle_col2.download_button(
             "⬇️ Alle Dokumente als ein PDF herunterladen",
             data=st.session_state.generated_kombiniert_pdf,
             file_name=st.session_state.generated_kombiniert_pdf_fname,
             mime="application/pdf",
+            type="primary",
+            use_container_width=True,
             help="Alle erzeugten PDFs in dieser Reihenfolge zu einer Datei zusammengefügt.",
         )
 
     if st.session_state.generated_fall_json:
-        st.download_button(
+        bundle_col3.download_button(
             "⬇️ Fall als JSON exportieren (für spätere Wiederholung)",
             data=st.session_state.generated_fall_json,
             file_name=st.session_state.generated_fall_json_fname,
             mime="application/json",
+            type="primary",
+            use_container_width=True,
             help=(
                 "Damit lässt sich dieser Testfall über 'Bestehenden Testfall "
                 "wiederholen' oben mit neuem Ereignisdatum erneut erzeugen."
