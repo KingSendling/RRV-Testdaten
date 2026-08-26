@@ -934,7 +934,20 @@ if st.session_state.generated:
             "Buchungsbestätigung, Storno-Rechnung) wurde generiert – die "
             "Dokumentenliste im JSON ist daher leer."
         )
-    st.code(
-        json.dumps(prozess_json_dict, ensure_ascii=False, indent=2),
-        language="json",
+    prozess_json_text = json.dumps(prozess_json_dict, ensure_ascii=False, indent=2)
+    st.code(prozess_json_text, language="json")
+
+    _fall = st.session_state.fall
+    prozess_json_fname = (
+        f"{st.session_state.get('generated_dateiname_praefix', '')}"
+        f"{_slug(_fall.mgl_nr)}_ProzessJSON_{_slug(_fall.name)}{_slug(_fall.vorname)}_"
+        f"{_fall.ereignisdatum.isoformat()}.json"
+    )
+    st.download_button(
+        "⬇️ Prozess-JSON herunterladen",
+        data=prozess_json_text,
+        file_name=prozess_json_fname,
+        mime="application/json",
+        type="primary",
+        use_container_width=True,
     )
