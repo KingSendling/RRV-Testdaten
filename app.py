@@ -735,9 +735,14 @@ if generieren_clicked:
         dateiname_praefix = _dateiname_praefix()
         ergebnisse: dict[str, bytes] = {}
 
-        if DOC_RECHNUNG in ausgewaehlte_typen:
-            pdf = erzeuge_rechnung(fall, ausgewaehlter_anbieter, rng)
-            fname = f"{dateiname_praefix}{mgl_nr_slug}_Rechnung_{_slug(ausgewaehlter_anbieter.name)}_{name_slug}_{ereignisdatum_str}.pdf"
+        if DOC_SCHADENMELDUNG_FORMULAR in ausgewaehlte_typen:
+            pdf = erzeuge_schadenmeldung(fall, ausgewaehlter_anbieter)
+            fname = f"{dateiname_praefix}{mgl_nr_slug}_Schadenmeldung_{name_slug}_{ereignisdatum_str}.pdf"
+            ergebnisse[fname] = pdf
+
+        if DOC_AERZTLICH in ausgewaehlte_typen:
+            pdf = erzeuge_aerztliche_bescheinigung(fall)
+            fname = f"{dateiname_praefix}{mgl_nr_slug}_AerztlicheBescheinigung_{name_slug}_{ereignisdatum_str}.pdf"
             ergebnisse[fname] = pdf
 
         if DOC_BUCHUNG in ausgewaehlte_typen:
@@ -750,14 +755,9 @@ if generieren_clicked:
             fname = f"{dateiname_praefix}{mgl_nr_slug}_Storno_{_slug(ausgewaehlter_anbieter.name)}_{name_slug}_{ereignisdatum_str}.pdf"
             ergebnisse[fname] = pdf
 
-        if DOC_AERZTLICH in ausgewaehlte_typen:
-            pdf = erzeuge_aerztliche_bescheinigung(fall)
-            fname = f"{dateiname_praefix}{mgl_nr_slug}_AerztlicheBescheinigung_{name_slug}_{ereignisdatum_str}.pdf"
-            ergebnisse[fname] = pdf
-
-        if DOC_SCHADENMELDUNG_FORMULAR in ausgewaehlte_typen:
-            pdf = erzeuge_schadenmeldung(fall, ausgewaehlter_anbieter)
-            fname = f"{dateiname_praefix}{mgl_nr_slug}_Schadenmeldung_{name_slug}_{ereignisdatum_str}.pdf"
+        if DOC_RECHNUNG in ausgewaehlte_typen:
+            pdf = erzeuge_rechnung(fall, ausgewaehlter_anbieter, rng)
+            fname = f"{dateiname_praefix}{mgl_nr_slug}_Rechnung_{_slug(ausgewaehlter_anbieter.name)}_{name_slug}_{ereignisdatum_str}.pdf"
             ergebnisse[fname] = pdf
 
         if DOC_SCHADENMELDUNG_ONLINE in ausgewaehlte_typen:
