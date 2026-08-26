@@ -91,10 +91,11 @@ Werte und müssen manuell eingetragen werden. Zusätzlich wählbar: der
 
 Das Buchungsdatum liegt immer vor oder am selben Tag wie das Stornodatum
 UND vor dem Reisebeginn (sonst würde der Camunda-Prozess den Testfall
-aussteuern) – das wird sowohl
-bei der Zufallsgenerierung sichergestellt als auch unmittelbar vor dem
-Erzeugen der Dokumente noch einmal automatisch korrigiert, falls das
-Stornodatum manuell davor verschoben wurde.
+aussteuern) – ist als eigenes Eingabefeld manuell anpassbar (vorbelegt mit
+einem automatisch passend berechneten Wert), wird aber unmittelbar vor dem
+Erzeugen der Dokumente noch einmal automatisch korrigiert, falls es
+zusammen mit Stornodatum/Reisezeitraum in eine unplausible Reihenfolge
+gebracht wurde.
 
 ## Projektstruktur
 

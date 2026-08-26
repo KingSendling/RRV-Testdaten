@@ -33,6 +33,7 @@ from utils.fake_data import (
     FallDaten,
     ICD10_VORSCHLAEGE,
     KRANKHEITEN_VORSCHLAEGE,
+    berechne_buchungsdatum,
     erzwinge_buchung_vor_storno_und_reise,
     fall_aus_dict,
     fall_zu_dict,
@@ -314,6 +315,8 @@ def _init_state():
     rng = random.Random()
     fake = get_faker()
     heute = date.today()
+    stornodatum = heute - timedelta(days=3)
+    reise_von = heute + timedelta(days=14)
 
     fall = FallDaten(
         krankheit=rng.choice(KRANKHEITEN_VORSCHLAEGE),
@@ -323,9 +326,10 @@ def _init_state():
         strasse=f"{fake.street_name()} {fake.building_number()}",
         plz_ort=f"{fake.postcode()} {fake.city()}",
         geburtsdatum=fake.date_of_birth(minimum_age=18, maximum_age=75),
-        stornodatum=heute - timedelta(days=3),
+        buchungsdatum=berechne_buchungsdatum(stornodatum, reise_von, rng),
+        stornodatum=stornodatum,
         ereignisdatum=heute - timedelta(days=4),
-        reise_von=heute + timedelta(days=14),
+        reise_von=reise_von,
         reise_bis=heute + timedelta(days=24),
         iban=generate_fake_iban(rng),
     )
@@ -362,6 +366,7 @@ def _init_state():
     st.session_state["in_strasse"] = fall.strasse
     st.session_state["in_plz_ort"] = fall.plz_ort
     st.session_state["in_geburtsdatum"] = fall.geburtsdatum
+    st.session_state["in_buchungsdatum"] = fall.buchungsdatum
     st.session_state["in_stornodatum"] = fall.stornodatum
     st.session_state["in_ereignisdatum"] = fall.ereignisdatum
     st.session_state["in_reise_von"] = fall.reise_von
@@ -409,6 +414,7 @@ def _core_falldaten_aus_eingabe() -> FallDaten:
         strasse=st.session_state["in_strasse"],
         plz_ort=st.session_state["in_plz_ort"],
         geburtsdatum=st.session_state["in_geburtsdatum"],
+        buchungsdatum=st.session_state["in_buchungsdatum"],
         stornodatum=st.session_state["in_stornodatum"],
         ereignisdatum=st.session_state["in_ereignisdatum"],
         reise_von=st.session_state["in_reise_von"],
@@ -427,6 +433,7 @@ def _core_feldnamen() -> list[str]:
         "strasse",
         "plz_ort",
         "geburtsdatum",
+        "buchungsdatum",
         "stornodatum",
         "ereignisdatum",
         "reise_von",
@@ -525,6 +532,7 @@ with st.expander("📂 Bestehenden Testfall wiederholen (optional)"):
                 st.session_state["in_strasse"] = verschoben.strasse
                 st.session_state["in_plz_ort"] = verschoben.plz_ort
                 st.session_state["in_geburtsdatum"] = verschoben.geburtsdatum
+                st.session_state["in_buchungsdatum"] = verschoben.buchungsdatum
                 st.session_state["in_stornodatum"] = verschoben.stornodatum
                 st.session_state["in_ereignisdatum"] = verschoben.ereignisdatum
                 st.session_state["in_reise_von"] = verschoben.reise_von
@@ -610,6 +618,12 @@ with col2:
         format="DD.MM.YYYY",
         min_value=date(1943, 1, 1),
         max_value=date.today(),
+    )
+    st.date_input(
+        "Buchungsdatum",
+        key="in_buchungsdatum",
+        format="DD.MM.YYYY",
+        help="Automatisch vor Stornodatum/Reisebeginn berechnet, kann bei Bedarf angepasst werden.",
     )
     st.date_input("Stornodatum", key="in_stornodatum", format="DD.MM.YYYY")
     st.date_input("Ereignisdatum (Diagnose/Versicherungsfall)", key="in_ereignisdatum", format="DD.MM.YYYY")

@@ -152,6 +152,7 @@ class FallDaten:
     strasse: str = ""
     plz_ort: str = ""
     geburtsdatum: date = field(default_factory=lambda: date(1985, 5, 15))
+    buchungsdatum: date = field(default_factory=lambda: date.today() - timedelta(days=30))
     stornodatum: date = field(default_factory=lambda: date.today() - timedelta(days=3))
     ereignisdatum: date = field(default_factory=lambda: date.today() - timedelta(days=4))
     reise_von: date = field(default_factory=lambda: date.today() + timedelta(days=10))
@@ -163,7 +164,6 @@ class FallDaten:
     rechnungsnummer: str = ""
     rechnungsdatum: date | None = None
     buchungsnummer: str = ""
-    buchungsdatum: date | None = None
     reisepreis: float = 0.0
     anzahlung: float = 0.0
     teilnehmer_zusatz: str = ""
@@ -268,11 +268,6 @@ def wuerfle_zusatzfelder(fall: FallDaten, rng: random.Random, fake: Faker) -> Fa
     neu.rechnungsnummer = f"RG-{rng.randint(100000, 999999)}"
     neu.rechnungsdatum = neu.stornodatum + timedelta(days=rng.randint(0, 2))
     neu.buchungsnummer = f"BK-{rng.randint(100000, 999999)}"
-    # Gebucht wird immer VOR dem Reisebeginn und VOR (oder am selben Tag wie)
-    # dem Stornodatum - sonst würde der Camunda-Prozess den Testfall wegen
-    # unplausibler Reihenfolge (Storno vor Buchung) aussteuern.
-    fruehestes_bezugsdatum = min(neu.stornodatum, neu.reise_von)
-    neu.buchungsdatum = fruehestes_bezugsdatum - timedelta(days=rng.randint(14, 150))
 
     grundpreis = rng.randint(2, 6) * 100 + rng.choice([0, 49, 90, 99])
     personen = rng.choice([1, 1, 2, 2, 3])
@@ -340,18 +335,27 @@ def wuerfle_zusatzfelder(fall: FallDaten, rng: random.Random, fake: Faker) -> Fa
     return neu
 
 
+def berechne_buchungsdatum(stornodatum: date, reise_von: date, rng: random.Random) -> date:
+    """Würfelt ein plausibles Buchungsdatum, das VOR dem Reisebeginn und VOR
+    (oder am selben Tag wie) dem Stornodatum liegt - sonst würde der
+    Camunda-Prozess den Testfall wegen unplausibler Reihenfolge (Storno vor
+    Buchung) aussteuern."""
+    fruehestes_bezugsdatum = min(stornodatum, reise_von)
+    return fruehestes_bezugsdatum - timedelta(days=rng.randint(14, 150))
+
+
 def erzwinge_buchung_vor_storno_und_reise(fall: FallDaten, rng: random.Random) -> FallDaten:
     """Stellt sicher, dass Buchungsdatum <= Stornodatum UND Buchungsdatum <=
     Reisebeginn gilt - beide Regeln sind hart, da der Camunda-Prozess
     Testfälle mit Storno oder Reisebeginn vor der Buchung immer aussteuert.
-    Wird als Sicherheitsnetz aufgerufen, falls Stornodatum oder
-    Reisezeitraum nachträglich (ohne Reroll) manuell vor das gewürfelte
-    Buchungsdatum verschoben wurden."""
+    Wird als Sicherheitsnetz aufgerufen, falls Stornodatum, Reisezeitraum
+    oder Buchungsdatum manuell in eine unplausible Reihenfolge gebracht
+    wurden."""
     fruehestes_bezugsdatum = min(fall.stornodatum, fall.reise_von)
-    if fall.buchungsdatum is not None and fall.buchungsdatum <= fruehestes_bezugsdatum:
+    if fall.buchungsdatum <= fruehestes_bezugsdatum:
         return fall
     neu = replace(fall)
-    neu.buchungsdatum = fruehestes_bezugsdatum - timedelta(days=rng.randint(14, 150))
+    neu.buchungsdatum = berechne_buchungsdatum(fall.stornodatum, fall.reise_von, rng)
     return neu
 
 
@@ -359,13 +363,13 @@ def pruefe_datumslogik(fall: FallDaten) -> list[str]:
     """Gibt eine Liste von Warnhinweisen (nicht blockierend) zurück."""
     warnungen: list[str] = []
 
-    if fall.buchungsdatum is not None and fall.buchungsdatum > fall.stornodatum:
+    if fall.buchungsdatum > fall.stornodatum:
         warnungen.append(
             "Buchungsdatum liegt nach dem Stornodatum – der Prozess würde "
             "diesen Testfall aussteuern. Wird beim Generieren automatisch "
             "korrigiert."
         )
-    if fall.buchungsdatum is not None and fall.buchungsdatum > fall.reise_von:
+    if fall.buchungsdatum > fall.reise_von:
         warnungen.append(
             "Buchungsdatum liegt nach dem Reisebeginn – der Prozess würde "
             "diesen Testfall aussteuern. Wird beim Generieren automatisch "
