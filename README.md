@@ -64,6 +64,18 @@ alle anderen Datumsfelder (Storno, Reisezeitraum, Buchung, AU-Zeitraum …)
 verschieben sich automatisch um denselben Abstand mit, damit der Testfall
 zeitlich schlüssig bleibt. Das Geburtsdatum ändert sich nicht.
 
+## OSM-JSON
+
+Unter "5. Download" steht zusätzlich ein OSM-JSON zum Export bereit
+(Dateiname wie die übrigen Exporte, nur mit `OSM` statt `Testfall` o. ä.):
+strukturierte Online-Schadenmeldung-Daten (Versicherungsnehmer, erkrankte
+Person, Mitreisende, Stornierungsgrund, Bankverbindung) für das
+Omnia-Zielsystem. Da diese App die erkrankte Person immer als die
+Versicherungsnehmerin/den Versicherungsnehmer selbst modelliert,
+entspricht `damageCausingPerson` bewusst `policyHolder`. Mitreisende
+(`participants`) werden anhand der bei der Zufallsgenerierung gewürfelten
+Anzahl mit fiktiven Namen/Geburtsdaten befüllt.
+
 ## Prozess-JSON (Omnia)
 
 Nach dem Generieren zeigt Abschnitt "6. Prozess-JSON (Omnia)" ein kopierbares

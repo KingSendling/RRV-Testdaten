@@ -28,7 +28,7 @@ from generators.rechnung import erzeuge_rechnung
 from generators.schadenmeldung import erzeuge_schadenmeldung
 from generators.storno import erzeuge_storno
 from utils.pdf_helpers import kombiniere_pdfs
-from utils.prozess_json import COVERAGE_PACKAGES, EINGANGSKANAELE, baue_prozess_json
+from utils.prozess_json import COVERAGE_PACKAGES, EINGANGSKANAELE, baue_osm_json, baue_prozess_json
 from utils.fake_data import (
     FallDaten,
     ICD10_VORSCHLAEGE,
@@ -339,6 +339,8 @@ def _init_state():
     st.session_state.generated = {}
     st.session_state.generated_fall_json = None
     st.session_state.generated_fall_json_fname = None
+    st.session_state.generated_osm_json = None
+    st.session_state.generated_osm_json_fname = None
     st.session_state.generated_dateiname_praefix = ""
     st.session_state.generated_kombiniert_pdf = None
     st.session_state.generated_kombiniert_pdf_fname = None
@@ -776,6 +778,20 @@ if generieren_clicked:
         st.session_state.generated_fall_json_fname = (
             f"{dateiname_praefix}{mgl_nr_slug}_Testfall_{name_slug}_{ereignisdatum_str}.json"
         )
+        st.session_state.generated_osm_json = json.dumps(
+            baue_osm_json(
+                fall,
+                external_document_id=str(uuid.uuid4()),
+                process_id=st.session_state["in_process_id"],
+                rng=rng,
+                fake=get_faker(),
+            ),
+            ensure_ascii=False,
+            indent=2,
+        )
+        st.session_state.generated_osm_json_fname = (
+            f"{dateiname_praefix}{mgl_nr_slug}_OSM_{name_slug}_{ereignisdatum_str}.json"
+        )
         st.session_state.generated_dateiname_praefix = dateiname_praefix
         st.session_state["in_external_ref_id"] = str(uuid.uuid4())
         st.session_state["in_input_date"] = _jetzt_iso_mit_millis()
@@ -813,8 +829,13 @@ if st.session_state.generated:
                 st.session_state.generated_fall_json_fname,
                 st.session_state.generated_fall_json,
             )
+        if st.session_state.generated_osm_json:
+            zf.writestr(
+                st.session_state.generated_osm_json_fname,
+                st.session_state.generated_osm_json,
+            )
 
-    bundle_col1, bundle_col2, bundle_col3 = st.columns(3)
+    bundle_col1, bundle_col2, bundle_col3, bundle_col4 = st.columns(4)
     bundle_col1.download_button(
         "⬇️ Alle Dokumente als ZIP herunterladen",
         data=zip_buf.getvalue(),
@@ -846,6 +867,21 @@ if st.session_state.generated:
             help=(
                 "Damit lässt sich dieser Testfall über 'Bestehenden Testfall "
                 "wiederholen' oben mit neuem Ereignisdatum erneut erzeugen."
+            ),
+        )
+
+    if st.session_state.generated_osm_json:
+        bundle_col4.download_button(
+            "⬇️ OSM-JSON exportieren",
+            data=st.session_state.generated_osm_json,
+            file_name=st.session_state.generated_osm_json_fname,
+            mime="application/json",
+            type="primary",
+            use_container_width=True,
+            help=(
+                "Strukturierte Online-Schadenmeldung-Daten (Versicherungsnehmer, "
+                "erkrankte Person, Mitreisende, Bankverbindung …) für das "
+                "Omnia-Zielsystem."
             ),
         )
 

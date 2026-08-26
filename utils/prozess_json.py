@@ -132,3 +132,93 @@ def baue_prozess_json(
         "sourcePdfMetadata": {"pageCount": gesamt_seiten},
         "documents": dokumente,
     }
+
+
+# --- OSM-JSON (Online-Schadenmeldung, strukturierte Fallangaben) -------------
+
+# fall.stornierungsgrund_kategorie ist einer der 9 Werte aus
+# STORNIERUNGSGRUND_KATEGORIEN in utils/fake_data.py - für die aktuellen
+# KRANKHEITEN_VORSCHLAEGE kommen davon aber nur diese drei tatsächlich vor.
+OSM_STORNIERUNGSGRUND_MAPPING: dict[str, str] = {
+    "Unerwartete, schwere Erkrankung": "Krankheit",
+    "Unfall": "Unfall",
+    "Schwangerschaft": "Schwangerschaft",
+}
+
+OSM_VERWANDTSCHAFTSGRADE = ["Partner", "Kinder", "Eltern", "Sonstige Verwandte"]
+
+
+def _splitte_strasse(strasse: str) -> tuple[str, str]:
+    """Trennt 'Musterstr. 12' in ('Musterstr.', '12')."""
+    teile = strasse.rsplit(" ", 1)
+    if len(teile) == 2:
+        return teile[0], teile[1]
+    return strasse, ""
+
+
+def _splitte_plz_ort(plz_ort: str) -> tuple[str, str]:
+    """Trennt '12345 Musterstadt' in ('12345', 'Musterstadt')."""
+    teile = plz_ort.split(" ", 1)
+    if len(teile) == 2:
+        return teile[0], teile[1]
+    return "", plz_ort
+
+
+def baue_osm_json(fall: FallDaten, external_document_id: str, process_id: str, rng, fake) -> dict:
+    """Baut das OSM-JSON (strukturierte Online-Schadenmeldung-Daten) für das
+    Omnia-Zielsystem. Die Ärztliche-Bescheinigung-/Schadenmeldung-Generatoren
+    dieser App modellieren die erkrankte Person immer als die Versicherungs-
+    nehmerin/den Versicherungsnehmer selbst (kein separates Datenmodell für
+    "erkrankter Angehöriger") - 'damageCausingPerson' entspricht daher hier
+    bewusst der Person aus 'policyHolder'. Mitreisende (Feld 'participants')
+    sind in `fall.teilnehmer_zusatz` nur als Anzahl/Text hinterlegt, nicht als
+    einzelne Personen - für sie werden daher zur Anzeige passende fiktive
+    Namen/Geburtsdaten erzeugt."""
+    strasse, hausnummer = _splitte_strasse(fall.strasse)
+    plz, ort = _splitte_plz_ort(fall.plz_ort)
+
+    anzahl_mitreisende_match = re.search(r"\+\s*(\d+)\s*weitere", fall.teilnehmer_zusatz)
+    anzahl_mitreisende = int(anzahl_mitreisende_match.group(1)) if anzahl_mitreisende_match else 0
+    participants = [
+        {
+            "givenName": fake.first_name(),
+            "surName": fall.name,
+            "kinship": [rng.choice(OSM_VERWANDTSCHAFTSGRADE)],
+            "dateOfBirth": fake.date_of_birth(minimum_age=1, maximum_age=80).isoformat(),
+        }
+        for _ in range(anzahl_mitreisende)
+    ]
+
+    return {
+        "processId": process_id,
+        "externalDocumentId": external_document_id,
+        "policyHolder": {
+            "givenName": fall.vorname,
+            "surName": fall.name,
+            "email": fall.email,
+            "address": {
+                "street": strasse,
+                "houseNumber": hausnummer,
+                "zipCode": plz,
+                "city": ort,
+            },
+        },
+        "damageCausingPerson": {
+            "givenName": fall.vorname,
+            "surName": fall.name,
+            "kinship": ["Ich selbst"],
+        },
+        "reasonForCancellation": [
+            OSM_STORNIERUNGSGRUND_MAPPING.get(fall.stornierungsgrund_kategorie, "Sonstiges")
+        ],
+        "cancellationDate": fall.stornodatum.isoformat(),
+        "interruptionDate": fall.stornodatum.isoformat(),
+        "isBusinessTrip": False,
+        "participants": participants,
+        "hasAdditionalInsurance": False,
+        "bankAccount": {
+            "iban": fall.iban,
+            "accountHolder": [{"givenName": fall.vorname, "surName": fall.name}],
+        },
+        "isResubmission": False,
+    }
