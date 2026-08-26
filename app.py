@@ -23,7 +23,6 @@ from data.providers import PROVIDERS, zufaelliger_anbieter
 from data.testpersonen import TESTPERSONEN
 from generators.aerztliche_bescheinigung import erzeuge_aerztliche_bescheinigung
 from generators.buchungsbestaetigung import erzeuge_buchungsbestaetigung
-from generators.deckblatt import erzeuge_deckblatt
 from generators.online_schadenmeldung import erzeuge_online_schadenmeldung
 from generators.rechnung import erzeuge_rechnung
 from generators.schadenmeldung import erzeuge_schadenmeldung
@@ -751,10 +750,6 @@ if generieren_clicked:
             pdf = erzeuge_online_schadenmeldung(fall, list(ergebnisse.keys()), rng)
             fname = f"{dateiname_praefix}{mgl_nr_slug}_OnlineSchadenmeldung_{name_slug}_{ereignisdatum_str}.pdf"
             ergebnisse[fname] = pdf
-
-        deckblatt_pdf = erzeuge_deckblatt(fall, ausgewaehlter_anbieter, list(ergebnisse.keys()))
-        deckblatt_fname = f"{dateiname_praefix}{mgl_nr_slug}_00_Deckblatt_{name_slug}_{ereignisdatum_str}.pdf"
-        ergebnisse = {deckblatt_fname: deckblatt_pdf, **ergebnisse}
 
         st.session_state.generated = ergebnisse
         st.session_state.generated_kombiniert_pdf = kombiniere_pdfs(list(ergebnisse.values()))

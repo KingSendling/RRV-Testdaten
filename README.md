@@ -43,8 +43,7 @@ python -m venv .venv
    (Rechnungsnummern, Beträge, Arztname …) neu, ohne die oben gesetzten
    Kernfelder oder den gewählten Anbieter zu verändern.
 5. "Dokumente generieren" klicken und die PDFs einzeln, als ZIP oder als ein
-   zusammengefügtes Gesamt-PDF herunterladen. Ein Deckblatt mit allen
-   Falldaten wird automatisch mitgeneriert.
+   zusammengefügtes Gesamt-PDF herunterladen.
 
 ## Testperson vorausfüllen
 
@@ -111,7 +110,6 @@ generators/storno.py                Storno-Rechnung
 generators/aerztliche_bescheinigung.py  Ärztliche Bescheinigung (AcroForm-Fill, Seiten 5-6)
 generators/schadenmeldung.py        Schadenmeldung (AcroForm-Fill, Seiten 1-4 derselben Vorlage)
 generators/online_schadenmeldung.py Online-Schadenmeldung (angelehnt an das ADAC-Online-Formular)
-generators/deckblatt.py             Deckblatt mit Fallübersicht
 utils/fake_data.py                  Falldaten-Modell, IBAN-Generator, Datumslogik
 utils/pdf_helpers.py                Gemeinsame PDF-Bausteine (Wasserzeichen, Layouts)
 utils/prozess_json.py               Prozess-/Dokumenteneingangs-JSON für das Omnia-Zielsystem
