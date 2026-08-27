@@ -33,6 +33,7 @@ from utils.fake_data import (
     FallDaten,
     ICD10_VORSCHLAEGE,
     KRANKHEITEN_VORSCHLAEGE,
+    Reiseteilnehmer,
     berechne_buchungsdatum,
     erzwinge_buchung_vor_storno_und_reise,
     fall_aus_dict,
@@ -378,6 +379,8 @@ def _init_state():
     st.session_state["in_reisepreis_override"] = ""
     st.session_state["in_stornokosten_override"] = ""
     st.session_state["in_stornostaffel_override"] = ""
+    st.session_state.teilnehmer_ids = []
+    st.session_state.teilnehmer_next_id = 0
     st.session_state["in_anbieter"] = zufaelliger_anbieter(rng).name
 
     st.session_state["chk_rechnung"] = True
@@ -410,6 +413,40 @@ def _aktueller_icd10_code() -> str:
     return choice.split(" – ")[0]
 
 
+def _neue_teilnehmer_zeile(vorname: str = "", nachname: str = "", geburtsdatum: date | None = None) -> None:
+    """Fügt eine neue (leere oder vorbefüllte) Reiseteilnehmer-Zeile an."""
+    zeile_id = st.session_state.teilnehmer_next_id
+    st.session_state.teilnehmer_next_id += 1
+    st.session_state.teilnehmer_ids.append(zeile_id)
+    st.session_state[f"in_teilnehmer_{zeile_id}_vorname"] = vorname
+    st.session_state[f"in_teilnehmer_{zeile_id}_nachname"] = nachname
+    st.session_state[f"in_teilnehmer_{zeile_id}_geburtsdatum"] = geburtsdatum or date(1985, 5, 15)
+
+
+def _weitere_teilnehmer_aus_session() -> list[Reiseteilnehmer]:
+    teilnehmer = []
+    for zeile_id in st.session_state.teilnehmer_ids:
+        vorname = st.session_state.get(f"in_teilnehmer_{zeile_id}_vorname", "").strip()
+        nachname = st.session_state.get(f"in_teilnehmer_{zeile_id}_nachname", "").strip()
+        if not vorname and not nachname:
+            continue
+        teilnehmer.append(
+            Reiseteilnehmer(
+                vorname=vorname,
+                nachname=nachname,
+                geburtsdatum=st.session_state.get(f"in_teilnehmer_{zeile_id}_geburtsdatum"),
+            )
+        )
+    return teilnehmer
+
+
+def _setze_weitere_teilnehmer(teilnehmer: list[Reiseteilnehmer]) -> None:
+    """Ersetzt alle aktuellen Reiseteilnehmer-Zeilen durch die übergebene Liste."""
+    st.session_state.teilnehmer_ids = []
+    for t in teilnehmer:
+        _neue_teilnehmer_zeile(t.vorname, t.nachname, t.geburtsdatum)
+
+
 def _core_falldaten_aus_eingabe() -> FallDaten:
     return FallDaten(
         krankheit=_aktuelle_krankheit(),
@@ -429,6 +466,7 @@ def _core_falldaten_aus_eingabe() -> FallDaten:
         reisepreis_override=st.session_state["in_reisepreis_override"],
         stornokosten_override=st.session_state["in_stornokosten_override"],
         stornostaffel_override=st.session_state["in_stornostaffel_override"],
+        weitere_teilnehmer=_weitere_teilnehmer_aus_session(),
     )
 
 
@@ -451,6 +489,7 @@ def _core_feldnamen() -> list[str]:
         "reisepreis_override",
         "stornokosten_override",
         "stornostaffel_override",
+        "weitere_teilnehmer",
     ]
 
 
@@ -553,6 +592,7 @@ with st.expander("📂 Bestehenden Testfall wiederholen (optional)"):
                 st.session_state["in_reisepreis_override"] = verschoben.reisepreis_override
                 st.session_state["in_stornokosten_override"] = verschoben.stornokosten_override
                 st.session_state["in_stornostaffel_override"] = verschoben.stornostaffel_override
+                _setze_weitere_teilnehmer(verschoben.weitere_teilnehmer)
                 if geladener_anbieter in PROVIDER_NAMEN:
                     st.session_state["in_anbieter"] = geladener_anbieter
                 st.session_state.generated = {}
@@ -681,6 +721,40 @@ with st.expander("💶 Storno-Rechnung: Werte manuell vorgeben (optional)"):
         st.session_state["in_stornokosten_override"]
     ) is None:
         override_col3.warning("Konnte nicht als Betrag interpretiert werden – wird ignoriert.")
+
+st.markdown("**Weitere Reiseteilnehmer**")
+st.caption(
+    "Zusätzlich zur Versicherungsnehmerin/zum Versicherungsnehmer selbst. "
+    "Wirkt sich auf Schadenmeldeformular, Rechnung, Buchungsbestätigung und "
+    "Storno-Rechnung aus."
+)
+for zeile_id in list(st.session_state.teilnehmer_ids):
+    zeile_col1, zeile_col2, zeile_col3, zeile_col4 = st.columns([3, 3, 3, 1])
+    zeile_col1.text_input("Vorname", key=f"in_teilnehmer_{zeile_id}_vorname")
+    zeile_col2.text_input("Nachname", key=f"in_teilnehmer_{zeile_id}_nachname")
+    zeile_col3.date_input(
+        "Geburtsdatum",
+        key=f"in_teilnehmer_{zeile_id}_geburtsdatum",
+        format="DD.MM.YYYY",
+        min_value=date(1943, 1, 1),
+        max_value=date.today(),
+    )
+    zeile_col4.markdown("<br>", unsafe_allow_html=True)
+    if zeile_col4.button("✕", key=f"btn_teilnehmer_{zeile_id}_entfernen", help="Diese Zeile entfernen"):
+        st.session_state.teilnehmer_ids.remove(zeile_id)
+        st.rerun()
+
+if st.button("➕ Reiseteilnehmer hinzufügen"):
+    _neue_teilnehmer_zeile()
+    st.rerun()
+
+if len(_weitere_teilnehmer_aus_session()) > 2:
+    st.warning(
+        "⚠️ Nur die ersten 2 weiteren Reiseteilnehmer erscheinen im "
+        "Schadenmeldeformular (das Formular hat nur 3 Zeilen inkl. "
+        "Versicherungsnehmer) – für Rechnung, Buchungsbestätigung und "
+        "Storno-Rechnung gilt diese Einschränkung nicht."
+    )
 
 vorschau_fall = _aktueller_fall_mit_core_ueberschrieben()
 warnungen = pruefe_datumslogik(vorschau_fall)
@@ -833,7 +907,6 @@ if generieren_clicked:
                 external_document_id=str(uuid.uuid4()),
                 process_id=st.session_state["in_process_id"],
                 rng=rng,
-                fake=get_faker(),
             ),
             ensure_ascii=False,
             indent=2,

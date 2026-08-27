@@ -164,29 +164,26 @@ def _splitte_plz_ort(plz_ort: str) -> tuple[str, str]:
     return "", plz_ort
 
 
-def baue_osm_json(fall: FallDaten, external_document_id: str, process_id: str, rng, fake) -> dict:
+def baue_osm_json(fall: FallDaten, external_document_id: str, process_id: str, rng) -> dict:
     """Baut das OSM-JSON (strukturierte Online-Schadenmeldung-Daten) für das
     Omnia-Zielsystem. Die Ärztliche-Bescheinigung-/Schadenmeldung-Generatoren
     dieser App modellieren die erkrankte Person immer als die Versicherungs-
     nehmerin/den Versicherungsnehmer selbst (kein separates Datenmodell für
     "erkrankter Angehöriger") - 'damageCausingPerson' entspricht daher hier
     bewusst der Person aus 'policyHolder'. Mitreisende (Feld 'participants')
-    sind in `fall.teilnehmer_zusatz` nur als Anzahl/Text hinterlegt, nicht als
-    einzelne Personen - für sie werden daher zur Anzeige passende fiktive
-    Namen/Geburtsdaten erzeugt."""
+    stammen aus `fall.weitere_teilnehmer`; 'kinship' hat dort kein eigenes
+    Eingabefeld und wird daher weiterhin zufällig befüllt."""
     strasse, hausnummer = _splitte_strasse(fall.strasse)
     plz, ort = _splitte_plz_ort(fall.plz_ort)
 
-    anzahl_mitreisende_match = re.search(r"\+\s*(\d+)\s*weitere", fall.teilnehmer_zusatz)
-    anzahl_mitreisende = int(anzahl_mitreisende_match.group(1)) if anzahl_mitreisende_match else 0
     participants = [
         {
-            "givenName": fake.first_name(),
-            "surName": fall.name,
+            "givenName": teilnehmer.vorname,
+            "surName": teilnehmer.nachname,
             "kinship": [rng.choice(OSM_VERWANDTSCHAFTSGRADE)],
-            "dateOfBirth": fake.date_of_birth(minimum_age=1, maximum_age=80).isoformat(),
+            "dateOfBirth": teilnehmer.geburtsdatum.isoformat() if teilnehmer.geburtsdatum else None,
         }
-        for _ in range(anzahl_mitreisende)
+        for teilnehmer in fall.weitere_teilnehmer
     ]
 
     return {

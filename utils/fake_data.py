@@ -142,6 +142,13 @@ def is_valid_iban_checksum(iban: str) -> bool:
 
 
 @dataclass
+class Reiseteilnehmer:
+    vorname: str = ""
+    nachname: str = ""
+    geburtsdatum: date | None = None
+
+
+@dataclass
 class FallDaten:
     # --- Kernfelder: vom User eingegeben, bleiben bei "Neuer Zufallsfall" erhalten ---
     krankheit: str = "Grippaler Infekt"
@@ -165,6 +172,12 @@ class FallDaten:
     stornokosten_override: str = ""
     stornostaffel_override: str = ""
 
+    # Weitere Reiseteilnehmer (neben dem Versicherungsnehmer/der
+    # Versicherungsnehmerin selbst) - beliebig viele in der App eintragbar,
+    # das Schadenmeldeformular hat aber nur Platz für 2 davon (siehe
+    # generators/schadenmeldung.py).
+    weitere_teilnehmer: list[Reiseteilnehmer] = field(default_factory=list)
+
     # --- Automatisch generierte Zusatzfelder (werden bei Reroll neu gewürfelt) ---
     reiseziel: str = ""
     rechnungsnummer: str = ""
@@ -172,7 +185,6 @@ class FallDaten:
     buchungsnummer: str = ""
     reisepreis: float = 0.0
     anzahlung: float = 0.0
-    teilnehmer_zusatz: str = ""
 
     diagnose_text: str = ""
     erster_arztbesuch_datum: date | None = None
@@ -276,13 +288,9 @@ def wuerfle_zusatzfelder(fall: FallDaten, rng: random.Random, fake: Faker) -> Fa
     neu.buchungsnummer = f"BK-{rng.randint(100000, 999999)}"
 
     grundpreis = rng.randint(2, 6) * 100 + rng.choice([0, 49, 90, 99])
-    personen = rng.choice([1, 1, 2, 2, 3])
+    personen = 1 + len(fall.weitere_teilnehmer)
     neu.reisepreis = round(grundpreis * personen, 2)
     neu.anzahlung = round(neu.reisepreis * rng.choice([0.1, 0.15, 0.2]), 2)
-    if personen > 1:
-        neu.teilnehmer_zusatz = f" + {personen - 1} weitere Person(en)"
-    else:
-        neu.teilnehmer_zusatz = ""
 
     neu.diagnose_text = _diagnose_text_fuer(fall.krankheit, rng)
     neu.erster_arztbesuch_datum = fall.ereignisdatum - timedelta(
@@ -416,7 +424,16 @@ def fall_zu_dict(fall: FallDaten, anbieter_name: str = "") -> dict:
     Tests mit neuem Ereignisdatum) wieder geladen werden kann."""
     daten = {}
     for k, v in vars(fall).items():
-        if isinstance(v, date):
+        if k == "weitere_teilnehmer":
+            daten[k] = [
+                {
+                    "vorname": t.vorname,
+                    "nachname": t.nachname,
+                    "geburtsdatum": t.geburtsdatum.isoformat() if t.geburtsdatum else None,
+                }
+                for t in v
+            ]
+        elif isinstance(v, date):
             daten[k] = v.isoformat()
         else:
             daten[k] = v
@@ -456,7 +473,16 @@ def fall_aus_dict(daten: dict) -> tuple[FallDaten, str]:
     for k, v in daten.items():
         if k not in feldnamen:
             continue
-        if k in _DATUM_FELDER and v is not None:
+        if k == "weitere_teilnehmer":
+            kwargs[k] = [
+                Reiseteilnehmer(
+                    vorname=t.get("vorname", ""),
+                    nachname=t.get("nachname", ""),
+                    geburtsdatum=date.fromisoformat(t["geburtsdatum"]) if t.get("geburtsdatum") else None,
+                )
+                for t in v
+            ]
+        elif k in _DATUM_FELDER and v is not None:
             kwargs[k] = date.fromisoformat(v)
         else:
             kwargs[k] = v
@@ -543,3 +569,14 @@ def effektive_erstattung(fall: FallDaten) -> float:
     effektiven Stornokosten abgeleitet (berücksichtigt also automatisch
     beide möglichen Overrides)."""
     return round(effektiver_reisepreis(fall) - effektive_stornokosten(fall), 2)
+
+
+def teilnehmer_namen_text(fall: FallDaten) -> str:
+    """' + Vorname Nachname, Vorname Nachname' für Rechnung/Buchungs-
+    bestätigung/Storno-Rechnung, oder '' ohne weitere Teilnehmer."""
+    namen = [
+        f"{t.vorname} {t.nachname}".strip()
+        for t in fall.weitere_teilnehmer
+        if t.vorname or t.nachname
+    ]
+    return f" + {', '.join(namen)}" if namen else ""

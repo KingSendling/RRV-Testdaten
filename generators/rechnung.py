@@ -9,7 +9,7 @@ from reportlab.lib.colors import HexColor
 from reportlab.pdfgen.canvas import Canvas
 
 from data.providers import Provider
-from utils.fake_data import FallDaten
+from utils.fake_data import FallDaten, teilnehmer_namen_text
 from utils.pdf_helpers import PAGE_H, PAGE_W, draw_footer_note, draw_header, draw_watermark, fmt_betrag, fmt_datum
 
 LEISTUNGSPOSITIONEN_VORLAGEN = [
@@ -50,7 +50,7 @@ def erzeuge_rechnung(fall: FallDaten, provider: Provider, rng: random.Random) ->
         margin,
         y,
         f"Reisezeitraum: {fmt_datum(fall.reise_von)} – {fmt_datum(fall.reise_bis)}"
-        f"{fall.teilnehmer_zusatz}",
+        f"{teilnehmer_namen_text(fall)}",
     )
     y -= 30
 

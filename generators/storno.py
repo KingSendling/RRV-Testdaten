@@ -14,6 +14,7 @@ from utils.fake_data import (
     effektive_erstattung,
     effektive_stornokosten,
     effektiver_reisepreis,
+    teilnehmer_namen_text,
 )
 from utils.pdf_helpers import PAGE_H, PAGE_W, draw_footer_note, draw_header, draw_watermark, fmt_betrag, fmt_datum
 
@@ -37,6 +38,12 @@ def erzeuge_storno(fall: FallDaten, provider: Provider, rng: random.Random) -> b
     c.drawString(margin, y, f"{fall.vorname} {fall.name}")
     c.drawString(margin, y - 13, fall.strasse)
     c.drawString(margin, y - 26, fall.plz_ort)
+    if fall.weitere_teilnehmer:
+        c.setFont("Helvetica", 8)
+        c.setFillColor(HexColor("#555555"))
+        c.drawString(margin, y - 39, f"Mitreisende:{teilnehmer_namen_text(fall)}")
+        c.setFont("Helvetica", 9)
+        c.setFillColor(HexColor("#111111"))
 
     c.drawRightString(PAGE_W - margin, y, f"Ursprüngl. Buchungsnr.: {fall.buchungsnummer}")
     c.drawRightString(PAGE_W - margin, y - 13, f"Stornodatum: {fmt_datum(fall.stornodatum)}")

@@ -123,6 +123,30 @@ abbilden. Beträge akzeptieren sowohl deutsches Komma ("899,00") als auch
 Punkt ("899.00") als Dezimaltrennzeichen; nicht interpretierbarer Text wird
 ignoriert (Warnung erscheint, automatische Berechnung greift weiter).
 
+## Weitere Reiseteilnehmer
+
+Über "➕ Reiseteilnehmer hinzufügen" in Abschnitt "1. Falldaten" lassen sich
+beliebig viele weitere Reisende (Vorname, Nachname, Geburtsdatum) neben der
+Versicherungsnehmerin/dem Versicherungsnehmer eintragen, mit "✕" pro Zeile
+wieder entfernbar. Wirkt sich aus auf:
+- **Schadenmeldeformular**: befüllt Teilnehmer 2 und 3 (das Formular hat nur
+  3 Zeilen inkl. Versicherungsnehmer – bei mehr als 2 weiteren Teilnehmern
+  erscheint eine Warnung, dass nur die ersten 2 im PDF landen). Anschrift wird
+  vom Versicherungsnehmer übernommen, eine eigene ADAC-Mitgliedsnummer haben
+  weitere Teilnehmer i. d. R. nicht.
+- **Rechnung, Buchungsbestätigung, Storno-Rechnung**: zeigen die echten Namen
+  statt der bisherigen vagen "+ N weitere Person(en)"-Angabe (Storno-Rechnung
+  bekommt dafür eine neue "Mitreisende:"-Zeile).
+- **Reisepreis**: wird jetzt aus der tatsächlichen Teilnehmerzahl berechnet
+  (Hauptreisender + eingetragene weitere Teilnehmer) statt unabhängig
+  zufällig 1-3 Personen zu würfeln.
+
+Die Teilnehmer bleiben bei "Neuer Zufallsfall generieren" erhalten und werden
+beim Testfall-Export/-Import sowie im OSM-JSON (`participants`)
+mitberücksichtigt. Das Geburtsdatum der Teilnehmer verschiebt sich beim
+"Testfall wiederholen" nicht mit (wie das Geburtsdatum des
+Versicherungsnehmers).
+
 ## Projektstruktur
 
 ```

@@ -9,7 +9,7 @@ from reportlab.lib.colors import HexColor
 from reportlab.pdfgen.canvas import Canvas
 
 from data.providers import Provider
-from utils.fake_data import FallDaten
+from utils.fake_data import FallDaten, teilnehmer_namen_text
 from utils.pdf_helpers import PAGE_H, PAGE_W, draw_footer_note, draw_header, draw_watermark, fmt_betrag, fmt_datum
 
 
@@ -34,7 +34,7 @@ def erzeuge_buchungsbestaetigung(fall: FallDaten, provider: Provider, rng: rando
     zeilen = [
         ("Reiseziel", fall.reiseziel),
         ("Reisezeitraum", f"{fmt_datum(fall.reise_von)} – {fmt_datum(fall.reise_bis)}"),
-        ("Hauptreisender", f"{fall.vorname} {fall.name}{fall.teilnehmer_zusatz}"),
+        ("Hauptreisender", f"{fall.vorname} {fall.name}{teilnehmer_namen_text(fall)}"),
         ("Reisepreis", fmt_betrag(fall.reisepreis)),
         ("Anzahlung (bereits geleistet)", fmt_betrag(fall.anzahlung)),
         ("Restzahlung fällig am", fmt_datum(fall.reise_von)),

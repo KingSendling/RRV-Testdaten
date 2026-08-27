@@ -74,6 +74,18 @@ def _text_werte(fall: FallDaten, provider: Provider) -> dict[str, str]:
         F["schluss_datum"]: fmt_datum(heute),
         F["schluss_ort"]: ort,
     }
+
+    # Das Formular hat nur Platz für 2 weitere Reiseteilnehmer (Zeile 2/3) -
+    # zusätzliche werden hier bewusst nicht aufgenommen (Warnung dazu in der
+    # App). Anschrift wird vom Versicherungsnehmer übernommen (gemeinsamer
+    # Wohnsitz angenommen), eine eigene Mitgliedsnummer haben sie meist nicht.
+    for feld_praefix, teilnehmer in zip(
+        ("teilnehmer2", "teilnehmer3"), fall.weitere_teilnehmer[:2]
+    ):
+        werte[F[f"{feld_praefix}_name"]] = f"{teilnehmer.nachname}, {teilnehmer.vorname}"
+        werte[F[f"{feld_praefix}_geburtsdatum"]] = fmt_datum(teilnehmer.geburtsdatum)
+        werte[F[f"{feld_praefix}_anschrift"]] = f"{fall.strasse}, {fall.plz_ort}"
+
     return werte
 
 
