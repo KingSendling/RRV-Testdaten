@@ -19,7 +19,7 @@ from data.field_mapping import (
     TEXT_FELDER_SCHADENMELDUNG,
 )
 from data.providers import Provider
-from utils.fake_data import FallDaten
+from utils.fake_data import FallDaten, effektive_erstattung, effektiver_reisepreis
 from utils.pdf_helpers import PAGE_H, PAGE_W, draw_diagonal_watermark, fmt_datum
 
 TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "assets" / "Schadenmeldeformular_RRV_Vorlage.pdf"
@@ -60,8 +60,8 @@ def _text_werte(fall: FallDaten, provider: Provider) -> dict[str, str]:
         F["teilnehmer1_geburtsdatum"]: fmt_datum(fall.geburtsdatum),
         F["teilnehmer1_anschrift"]: f"{fall.strasse}, {fall.plz_ort}",
         F["teilnehmer1_mgl_nr"]: fall.mgl_nr,
-        F["gesamtreisepreis"]: _euro(fall.reisepreis),
-        F["erstattungsbetrag"]: _euro(fall.erstattungsbetrag),
+        F["gesamtreisepreis"]: _euro(effektiver_reisepreis(fall)),
+        F["erstattungsbetrag"]: _euro(effektive_erstattung(fall)),
         F["iban"]: fall.iban,
         F["bic"]: fall.bic,
         F["name_kreditinstitut"]: fall.bank_name,

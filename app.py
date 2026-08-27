@@ -40,6 +40,7 @@ from utils.fake_data import (
     generate_fake_iban,
     get_faker,
     is_valid_iban_checksum,
+    parse_betrag_de,
     pruefe_datumslogik,
     verschiebe_datumsfelder,
     wuerfle_zusatzfelder,
@@ -374,6 +375,9 @@ def _init_state():
     st.session_state["in_reise_von"] = fall.reise_von
     st.session_state["in_reise_bis"] = fall.reise_bis
     st.session_state["in_iban"] = fall.iban
+    st.session_state["in_reisepreis_override"] = ""
+    st.session_state["in_stornokosten_override"] = ""
+    st.session_state["in_stornostaffel_override"] = ""
     st.session_state["in_anbieter"] = zufaelliger_anbieter(rng).name
 
     st.session_state["chk_rechnung"] = True
@@ -422,6 +426,9 @@ def _core_falldaten_aus_eingabe() -> FallDaten:
         reise_von=st.session_state["in_reise_von"],
         reise_bis=st.session_state["in_reise_bis"],
         iban=st.session_state["in_iban"],
+        reisepreis_override=st.session_state["in_reisepreis_override"],
+        stornokosten_override=st.session_state["in_stornokosten_override"],
+        stornostaffel_override=st.session_state["in_stornostaffel_override"],
     )
 
 
@@ -441,6 +448,9 @@ def _core_feldnamen() -> list[str]:
         "reise_von",
         "reise_bis",
         "iban",
+        "reisepreis_override",
+        "stornokosten_override",
+        "stornostaffel_override",
     ]
 
 
@@ -540,6 +550,9 @@ with st.expander("📂 Bestehenden Testfall wiederholen (optional)"):
                 st.session_state["in_reise_von"] = verschoben.reise_von
                 st.session_state["in_reise_bis"] = verschoben.reise_bis
                 st.session_state["in_iban"] = verschoben.iban
+                st.session_state["in_reisepreis_override"] = verschoben.reisepreis_override
+                st.session_state["in_stornokosten_override"] = verschoben.stornokosten_override
+                st.session_state["in_stornostaffel_override"] = verschoben.stornostaffel_override
                 if geladener_anbieter in PROVIDER_NAMEN:
                     st.session_state["in_anbieter"] = geladener_anbieter
                 st.session_state.generated = {}
@@ -632,6 +645,42 @@ with col2:
     reise_col1, reise_col2 = st.columns(2)
     reise_col1.date_input("Reisezeitraum von", key="in_reise_von", format="DD.MM.YYYY")
     reise_col2.date_input("Reisezeitraum bis", key="in_reise_bis", format="DD.MM.YYYY")
+
+with st.expander("💶 Storno-Rechnung: Werte manuell vorgeben (optional)"):
+    st.caption(
+        "Bleiben diese Felder leer, werden Reisepreis, Stornostaffel und "
+        "Stornokosten wie bisher automatisch berechnet. Ein hier "
+        "eingetragener Reisepreis/Stornokosten-Betrag wirkt sich auch auf "
+        "die Felder 'Gesamtreisepreis'/'Erstattungsbetrag' der Schadenmeldung "
+        "aus, damit der Fall in sich schlüssig bleibt – Rechnung und "
+        "Buchungsbestätigung bleiben unverändert."
+    )
+    override_col1, override_col2, override_col3 = st.columns(3)
+    override_col1.text_input(
+        "Ursprünglicher Reisepreis",
+        key="in_reisepreis_override",
+        placeholder="leer = automatisch berechnet",
+    )
+    if st.session_state["in_reisepreis_override"].strip() and parse_betrag_de(
+        st.session_state["in_reisepreis_override"]
+    ) is None:
+        override_col1.warning("Konnte nicht als Betrag interpretiert werden – wird ignoriert.")
+
+    override_col2.text_input(
+        "Stornostaffel",
+        key="in_stornostaffel_override",
+        placeholder="leer = automatisch berechnet",
+    )
+
+    override_col3.text_input(
+        "Stornokosten",
+        key="in_stornokosten_override",
+        placeholder="leer = automatisch berechnet",
+    )
+    if st.session_state["in_stornokosten_override"].strip() and parse_betrag_de(
+        st.session_state["in_stornokosten_override"]
+    ) is None:
+        override_col3.warning("Konnte nicht als Betrag interpretiert werden – wird ignoriert.")
 
 vorschau_fall = _aktueller_fall_mit_core_ueberschrieben()
 warnungen = pruefe_datumslogik(vorschau_fall)

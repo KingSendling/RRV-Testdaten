@@ -159,6 +159,12 @@ class FallDaten:
     reise_bis: date = field(default_factory=lambda: date.today() + timedelta(days=20))
     iban: str = ""
 
+    # Manuelle Overrides für Storno-Rechnung & Schadenmeldung (leer = automatisch
+    # berechnet, siehe parse_betrag_de()/effektiver_reisepreis() etc. unten).
+    reisepreis_override: str = ""
+    stornokosten_override: str = ""
+    stornostaffel_override: str = ""
+
     # --- Automatisch generierte Zusatzfelder (werden bei Reroll neu gewürfelt) ---
     reiseziel: str = ""
     rechnungsnummer: str = ""
@@ -494,3 +500,46 @@ def berechne_stornokosten(reisepreis: float, reise_von: date, stornodatum: date)
     stornokosten = round(reisepreis * satz, 2)
     erstattung = round(reisepreis - stornokosten, 2)
     return stornokosten, erstattung
+
+
+def parse_betrag_de(text: str) -> float | None:
+    """Parst einen vom Nutzer eingegebenen Betrag - akzeptiert sowohl
+    deutsches Komma ('899,00') als auch Punkt ('899.00') als
+    Dezimaltrennzeichen. None bei leerem oder nicht interpretierbarem Text."""
+    text = text.strip()
+    if not text:
+        return None
+    normalisiert = text.replace(".", "").replace(",", ".") if "," in text else text
+    try:
+        return float(normalisiert)
+    except ValueError:
+        return None
+
+
+def effektiver_reisepreis(fall: FallDaten) -> float:
+    """Der für Storno-Rechnung/Schadenmeldung anzuzeigende Reisepreis -
+    entweder der manuell vorgegebene Override oder der automatisch
+    gewürfelte `fall.reisepreis`. Rechnung/Buchungsbestätigung nutzen
+    weiterhin unverändert `fall.reisepreis` direkt."""
+    override = parse_betrag_de(fall.reisepreis_override)
+    return override if override is not None else fall.reisepreis
+
+
+def effektive_stornokosten(fall: FallDaten) -> float:
+    """Die für Storno-Rechnung/Schadenmeldung anzuzeigenden Stornokosten -
+    entweder der manuelle Override oder automatisch aus dem effektiven
+    Reisepreis berechnet."""
+    override = parse_betrag_de(fall.stornokosten_override)
+    if override is not None:
+        return override
+    stornokosten, _ = berechne_stornokosten(
+        effektiver_reisepreis(fall), fall.reise_von, fall.stornodatum
+    )
+    return stornokosten
+
+
+def effektive_erstattung(fall: FallDaten) -> float:
+    """Der Erstattungsbetrag, konsistent aus effektivem Reisepreis und
+    effektiven Stornokosten abgeleitet (berücksichtigt also automatisch
+    beide möglichen Overrides)."""
+    return round(effektiver_reisepreis(fall) - effektive_stornokosten(fall), 2)

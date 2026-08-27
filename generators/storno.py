@@ -9,7 +9,12 @@ from reportlab.lib.colors import HexColor
 from reportlab.pdfgen.canvas import Canvas
 
 from data.providers import Provider
-from utils.fake_data import FallDaten, berechne_stornokosten
+from utils.fake_data import (
+    FallDaten,
+    effektive_erstattung,
+    effektive_stornokosten,
+    effektiver_reisepreis,
+)
 from utils.pdf_helpers import PAGE_H, PAGE_W, draw_footer_note, draw_header, draw_watermark, fmt_betrag, fmt_datum
 
 
@@ -45,23 +50,27 @@ def erzeuge_storno(fall: FallDaten, provider: Provider, rng: random.Random) -> b
     c.drawString(margin + 100, y, _stornogrund_text(fall.krankheit))
     y -= 22
 
-    stornokosten, erstattung = berechne_stornokosten(
-        fall.reisepreis, fall.reise_von, fall.stornodatum
-    )
-    tage_vorher = (fall.reise_von - fall.stornodatum).days
-    if tage_vorher > 30:
-        satz_text = "20% (mehr als 30 Tage vor Reiseantritt)"
-    elif tage_vorher > 14:
-        satz_text = "40% (15-30 Tage vor Reiseantritt)"
-    elif tage_vorher > 7:
-        satz_text = "60% (8-14 Tage vor Reiseantritt)"
-    elif tage_vorher > 1:
-        satz_text = "80% (2-7 Tage vor Reiseantritt)"
+    reisepreis_anzeige = effektiver_reisepreis(fall)
+    stornokosten = effektive_stornokosten(fall)
+    erstattung = effektive_erstattung(fall)
+
+    if fall.stornostaffel_override.strip():
+        satz_text = fall.stornostaffel_override.strip()
     else:
-        satz_text = "95% (kurzfristiger Rücktritt)"
+        tage_vorher = (fall.reise_von - fall.stornodatum).days
+        if tage_vorher > 30:
+            satz_text = "20% (mehr als 30 Tage vor Reiseantritt)"
+        elif tage_vorher > 14:
+            satz_text = "40% (15-30 Tage vor Reiseantritt)"
+        elif tage_vorher > 7:
+            satz_text = "60% (8-14 Tage vor Reiseantritt)"
+        elif tage_vorher > 1:
+            satz_text = "80% (2-7 Tage vor Reiseantritt)"
+        else:
+            satz_text = "95% (kurzfristiger Rücktritt)"
 
     zeilen = [
-        ("Ursprünglicher Reisepreis", fmt_betrag(fall.reisepreis)),
+        ("Ursprünglicher Reisepreis", fmt_betrag(reisepreis_anzeige)),
         ("Stornostaffel", satz_text),
         ("Stornokosten", fmt_betrag(stornokosten)),
     ]

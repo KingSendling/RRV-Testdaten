@@ -109,6 +109,20 @@ Erzeugen der Dokumente noch einmal automatisch korrigiert, falls es
 zusammen mit Stornodatum/Reisezeitraum in eine unplausible Reihenfolge
 gebracht wurde.
 
+## Storno-Rechnung: Werte manuell vorgeben
+
+Über den Expander "💶 Storno-Rechnung: Werte manuell vorgeben (optional)" in
+Abschnitt "1. Falldaten" lassen sich Ursprünglicher Reisepreis, Stornostaffel
+und Stornokosten der Storno-Rechnung überschreiben. Bleiben die Felder leer,
+werden alle drei Werte weiterhin automatisch berechnet. Ein eingetragener
+Reisepreis-/Stornokosten-Betrag wirkt sich zusätzlich auf "Gesamtreisepreis"/
+"Erstattungsbetrag" der Schadenmeldung aus, damit der Fall in sich schlüssig
+bleibt – Rechnung und Buchungsbestätigung zeigen weiterhin unverändert den
+automatisch gewürfelten Reisepreis, da sie den ursprünglichen Buchungsvorgang
+abbilden. Beträge akzeptieren sowohl deutsches Komma ("899,00") als auch
+Punkt ("899.00") als Dezimaltrennzeichen; nicht interpretierbarer Text wird
+ignoriert (Warnung erscheint, automatische Berechnung greift weiter).
+
 ## Projektstruktur
 
 ```
