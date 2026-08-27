@@ -151,4 +151,8 @@ TESTPERSONEN: list[Testperson] = [
     Testperson('010863090', 'Tim', 'OmnIA', date(1991, 1, 10), 'Zeil 106', '60313', 'Frankfurt am Main'),
     Testperson('010863104', 'Laura', 'OmnIA', date(1961, 5, 19), 'Schiffbeker Weg 199', '22119', 'Hamburg'),
     Testperson('010858674', 'Maria', 'OmnIA', date(2002, 10, 24), 'Alexanderplatz 1', '10178', 'Berlin'),
+    Testperson('010859328', 'Lukas', 'OmnIA', date(1976, 5, 11), 'Zeil 106', '60313', 'Frankfurt am Main'),
+    Testperson('010859310', 'Max', 'OmnIA', date(1999, 11, 22), 'Alexanderplatz 1', '10178', 'Berlin'),
+    Testperson('010859344', 'Laura', 'OmnIA', date(1973, 11, 3), 'Zeil 106', '60313', 'Frankfurt am Main'),
+    Testperson('010859379', 'Laura', 'OmnIA', date(1971, 6, 5), 'Zeil 106', '60313', 'Frankfurt am Main'),
 ]

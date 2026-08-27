@@ -48,7 +48,7 @@ python -m venv .venv
 ## Testperson vorausfüllen
 
 Über "👤 Testperson aus Liste vorausfüllen" oben in der App lässt sich Mgl.-Nr.,
-Name, Vorname, Geburtsdatum und Adresse mit einer von 116 vordefinierten
+Name, Vorname, Geburtsdatum und Adresse mit einer von 120 vordefinierten
 Testpersonen aus dem internen Testdatensatz (`data/testpersonen.py`, erzeugt
 aus `TEST_DATA_INT3.xlsx`, Reiter "Extra-Daten") vorausfüllen. Krankheit,
 Termine und IBAN bleiben dabei unverändert.
@@ -73,8 +73,8 @@ Person, Mitreisende, Stornierungsgrund, Bankverbindung) für das
 Omnia-Zielsystem. Da diese App die erkrankte Person immer als die
 Versicherungsnehmerin/den Versicherungsnehmer selbst modelliert,
 entspricht `damageCausingPerson` bewusst `policyHolder`. Mitreisende
-(`participants`) werden anhand der bei der Zufallsgenerierung gewürfelten
-Anzahl mit fiktiven Namen/Geburtsdaten befüllt.
+(`participants`) stammen aus den unter "Weitere Reiseteilnehmer" (siehe
+unten) eingetragenen echten Daten.
 
 ## Prozess-JSON (Omnia)
 
@@ -154,7 +154,7 @@ app.py                              Streamlit-Einstiegspunkt
 assets/                             Original-ADAC-Formularvorlage
 data/providers.py                   Fiktive Reiseanbieter (Namen, Farben, Layout-Varianten)
 data/field_mapping.py               AcroForm-Feldnamen der Ärztlichen Bescheinigung & Schadenmeldung
-data/testpersonen.py                116 vordefinierte Testpersonen (Mgl.-Nr., Name, Geburtsdatum, Adresse)
+data/testpersonen.py                120 vordefinierte Testpersonen (Mgl.-Nr., Name, Geburtsdatum, Adresse)
 generators/rechnung.py              Rechnung
 generators/buchungsbestaetigung.py  Buchungsbestätigung
 generators/storno.py                Storno-Rechnung
