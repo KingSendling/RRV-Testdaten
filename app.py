@@ -899,7 +899,7 @@ if generieren_clicked:
             fall_zu_dict(fall, ausgewaehlter_anbieter.name), ensure_ascii=False, indent=2
         )
         st.session_state.generated_fall_json_fname = (
-            f"{dateiname_praefix}{mgl_nr_slug}_Testfall_{name_slug}_{ereignisdatum_str}.json"
+            f"{dateiname_praefix}{mgl_nr_slug}_Testfall_{name_slug}_{ereignisdatum_str}_wdh.json"
         )
         st.session_state.generated_osm_json = json.dumps(
             baue_osm_json(
