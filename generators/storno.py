@@ -19,10 +19,6 @@ from utils.fake_data import (
 from utils.pdf_helpers import PAGE_H, PAGE_W, draw_footer_note, draw_header, draw_watermark, fmt_betrag, fmt_datum
 
 
-def _stornogrund_text(krankheit: str) -> str:
-    return f"Krankheitsbedingter Rücktritt ({krankheit})"
-
-
 def erzeuge_storno(fall: FallDaten, provider: Provider, rng: random.Random) -> bytes:
     buf = io.BytesIO()
     c = Canvas(buf, pagesize=(PAGE_W, PAGE_H))
@@ -54,7 +50,7 @@ def erzeuge_storno(fall: FallDaten, provider: Provider, rng: random.Random) -> b
     c.drawString(margin, y, "Stornogrund:")
     c.setFont("Helvetica", 9.5)
     c.setFillColor(HexColor("#111111"))
-    c.drawString(margin + 100, y, _stornogrund_text(fall.krankheit))
+    c.drawString(margin + 100, y, "Rücktritt")
     y -= 22
 
     reisepreis_anzeige = effektiver_reisepreis(fall)
