@@ -29,7 +29,7 @@ class Testperson:
     @property
     def anzeige(self) -> str:
         return (
-            f"{self.vorname} {self.nachname} — {self.mgl_nr} "
+            f"{self.mgl_nr} — {self.vorname} {self.nachname} "
             f"({self.geburtsdatum.strftime('%d.%m.%Y')})"
         )
 

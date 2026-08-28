@@ -611,7 +611,7 @@ with st.expander("👤 Testperson aus Liste vorausfüllen (optional)"):
     testperson_col, testperson_btn_col = st.columns([3, 1])
     testperson_anzeige = testperson_col.selectbox(
         "Testperson",
-        [p.anzeige for p in TESTPERSONEN],
+        [p.anzeige for p in sorted(TESTPERSONEN, key=lambda p: p.mgl_nr)],
         key="in_testperson_auswahl",
         label_visibility="collapsed",
     )
